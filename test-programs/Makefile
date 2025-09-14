@@ -8,17 +8,25 @@ CFLAGS   :=
 CXXFLAGS := 
 LDFLAGS  :=
 
-all: cconsole.exe cwin32.exe cppconsole.exe
+all: console.exe win32.exe cppconsole.exe threads.exe exceptions.exe
 
-cconsole.exe: cconsole.c
+console.exe: console.c
 	$(CC) -o $@ $<
 	$(STRIP) -s $@
 
-cwin32.exe: cwin32.c
+win32.exe: win32.c
 	$(CC) -o $@ $<
 	$(STRIP) -s $@
 
 cppconsole.exe: cppconsole.cpp
+	$(CXX) -o $@ $<
+	$(STRIP) -s $@
+
+threads.exe: threads.cpp
+	$(CXX) -o $@ $<
+	$(STRIP) -s $@
+
+exceptions.exe: exceptions.cpp
 	$(CXX) -o $@ $<
 	$(STRIP) -s $@
 
