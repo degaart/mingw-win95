@@ -93,7 +93,7 @@ if ! checkstate binutils-installed; then
         --enable-static \
         --with-sysroot="$PREFIX"\
         --target="$ARCH" \
-        -disable-multilib \
+        --disable-multilib \
         --disable-nls \
         --enable-lto \
         --disable-gdb > "$STATEDIR/binutils-configure.log" 2>&1
@@ -117,8 +117,8 @@ if ! checkstate binutils-installed; then
 fi
 
 ### mingw-w64 headers
-if ! extract mingw-w64-v13.0.0.tar.bz2 MINGW_EXTRACT_DIR > "$STATEDIR/mingw-headers-extract.log" 2>&1; then
-    tail "$STATEDIR/mingw-headers-extract.log"
+if ! extract mingw-w64-v13.0.0.tar.bz2 MINGW_EXTRACT_DIR > "$STATEDIR/mingw-extract.log" 2>&1; then
+    tail "$STATEDIR/mingw-extract.log"
     exit 1
 fi
 
@@ -159,7 +159,7 @@ if ! checkstate gcc-phase1-installed; then
         --prefix="$PREFIX" \
         --enable-languages=c,c++ \
         --disable-nls \
-        --enable-threads=win32 \
+        --enable-threads=posix \
         --disable-sjlj-exceptions \
         --with-dwarf2 > "$STATEDIR/gcc-phase1-configure.log" 2>&1
     then
@@ -184,9 +184,9 @@ fi
 ### mingw-w64-crt
 if ! checkstate mingw-w64-crt-installed; then
     echo "Configuring mingw-w64-crt"
-    rm -rf "$BUILDDIR/${MINGW_EXTRACT_DIR}-build"
-    mkdir -p "$BUILDDIR/${MINGW_EXTRACT_DIR}-build"
-    cd "$BUILDDIR/${MINGW_EXTRACT_DIR}-build"
+    rm -rf "$BUILDDIR/mingw-w64-crt-build"
+    mkdir -p "$BUILDDIR/mingw-w64-crt-build"
+    cd "$BUILDDIR/mingw-w64-crt-build"
     if ! "$MINGW_EXTRACT_DIR/mingw-w64-crt/configure" \
         --host="$ARCH" \
         --prefix="$PREFIX/$ARCH" \
@@ -211,6 +211,37 @@ if ! checkstate mingw-w64-crt-installed; then
         exit 1
     fi
     writestate mingw-w64-crt-installed
+fi
+
+### winpthreads
+if ! checkstate winpthreads-installed; then
+    echo "Configuring winpthreads"
+    rm -rf "$BUILDDIR/winpthreads-build"
+    mkdir -p "$BUILDDIR/winpthreads-build"
+    cd "$BUILDDIR/winpthreads-build"
+    if ! "$MINGW_EXTRACT_DIR/mingw-w64-libraries/winpthreads/configure" \
+        --host="$ARCH" \
+        --disable-shared \
+        --enable-static \
+        --prefix="$PREFIX/$ARCH" > "$STATEDIR/winpthreads-configure.log" 2>&1
+    then
+        tail "$STATEDIR/winpthreads-configure.log"
+        exit 1
+    fi
+
+    echo "Building winpthreads"
+    if ! make -j$(nproc) > "$STATEDIR/winpthreads-build.log" 2>&1; then
+        tail "$STATEDIR/winpthreads-build.log"
+        exit 1
+    fi
+
+    echo "Installing winpthreads"
+    if ! make install > "$STATEDIR/winpthreads-install.log" 2>&1; then
+        tail "$STATEDIR/winpthreads-install.log"
+        exit 1
+    fi
+
+    writestate winpthread-installed
 fi
 
 ### gcc (phase 2)
