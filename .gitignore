@@ -1,0 +1,8 @@
+/build
+/history.txt
+/i586-w64-mingw32
+/state
+/state.tar
+/tarballs
+/w64devkit
+*.exe
