@@ -118,6 +118,7 @@ fi
 
 ### mingw-w64 headers
 if ! extract mingw-w64-v13.0.0.tar.bz2 MINGW_EXTRACT_DIR > "$STATEDIR/mingw-extract.log" 2>&1; then
+    patch -d "$MINGW_EXTRACT_DIR" -p1 "$BASEDIR/patches/winpthreads-disable_debugger_check.diff"
     tail "$STATEDIR/mingw-extract.log"
     exit 1
 fi
@@ -161,7 +162,15 @@ if ! checkstate gcc-phase1-installed; then
         --disable-nls \
         --enable-threads=posix \
         --disable-sjlj-exceptions \
-        --with-dwarf2 > "$STATEDIR/gcc-phase1-configure.log" 2>&1
+        --with-dwarf2 \
+        --enable-version-specific-runtime-libs \
+        --disable-libstdcxx-verbose \
+        --disable-dependency-tracking \
+        --disable-lto \
+        CFLAGS_FOR_TARGET="-Os" \
+        CXXFLAGS_FOR_TARGET="-Os" \
+        LDFLAGS_FOR_TARGET="-s" \
+        > "$STATEDIR/gcc-phase1-configure.log" 2>&1
     then
         tail "$STATEDIR/gcc-phase1-configure.log"
         exit 1
@@ -193,7 +202,10 @@ if ! checkstate mingw-w64-crt-installed; then
         --with-default-msvcrt=msvcrt-os \
         --with-sysroot="$PREFIX/$ARCH" \
         --enable-lib32 \
-        --disable-lib64 > "$STATEDIR/mingw-crt-configure.log" 2>&1
+        --disable-lib64 \
+        CFLAGS="-Os" \
+        LDFLAGS="-s" \
+        > "$STATEDIR/mingw-crt-configure.log" 2>&1
     then
         tail "$STATEDIR/mingw-crt-configure.log"
         exit 1
@@ -223,7 +235,10 @@ if ! checkstate winpthreads-installed; then
         --host="$ARCH" \
         --disable-shared \
         --enable-static \
-        --prefix="$PREFIX/$ARCH" > "$STATEDIR/winpthreads-configure.log" 2>&1
+        --prefix="$PREFIX/$ARCH" \
+        CFLAGS="-Os" \
+        LDFLAGS="-s" \
+        > "$STATEDIR/winpthreads-configure.log" 2>&1
     then
         tail "$STATEDIR/winpthreads-configure.log"
         exit 1
