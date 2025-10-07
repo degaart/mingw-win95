@@ -1,0 +1,25 @@
+diff -rupN gcc-15.2.0.orig/libgcc/config/i386/gthr-win32.h gcc-15.2.0/libgcc/config/i386/gthr-win32.h
+--- gcc-15.2.0.orig/libgcc/config/i386/gthr-win32.h	2025-08-08 09:51:44.850574345 +0300
++++ gcc-15.2.0/libgcc/config/i386/gthr-win32.h	2025-10-07 18:33:09.499554151 +0300
+@@ -636,7 +636,7 @@ __gthread_detach (__gthread_t __thr)
+ __GTHREAD_WIN32_INLINE int
+ __gthread_equal (__gthread_t __t1, __gthread_t __t2)
+ {
+-  return GetThreadId ((HANDLE) __t1) == GetThreadId ((HANDLE) __t2);
++  return 0;
+ }
+ 
+ __GTHREAD_WIN32_INLINE int
+diff -rupN gcc-15.2.0.orig/libgcc/config/i386/gthr-win32-thread.c gcc-15.2.0/libgcc/config/i386/gthr-win32-thread.c
+--- gcc-15.2.0.orig/libgcc/config/i386/gthr-win32-thread.c	2025-08-08 09:51:44.850574345 +0300
++++ gcc-15.2.0/libgcc/config/i386/gthr-win32-thread.c	2025-10-07 18:32:43.283559494 +0300
+@@ -116,9 +116,6 @@ __gthr_win32_join (__gthread_t thr, void
+ {
+   int status = 0;
+ 
+-  if (GetThreadId ((HANDLE) thr) == GetCurrentThreadId ())
+-    return 1;
+-
+   if (WaitForSingleObject ((HANDLE) thr, INFINITE) == WAIT_OBJECT_0)
+     {
+       if (value_ptr)
