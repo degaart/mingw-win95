@@ -62,22 +62,23 @@ mkdir -p "$STATEDIR"
 
 ### Download tarballs
 TARBALLS=( \
-    https://ftpmirror.gnu.org/gnu/binutils/binutils-2.45.tar.xz \
-    https://ftpmirror.gnu.org/gnu/gcc/gcc-15.2.0/gcc-15.2.0.tar.xz \
-    https://ftpmirror.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz \
-    https://ftpmirror.gnu.org/gnu/mpc/mpc-1.3.1.tar.gz \
-    https://ftpmirror.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.xz \
-    http://gcc.gnu.org/pub/gcc/infrastructure/isl-0.18.tar.bz2 \
-    https://downloads.sourceforge.net/project/mingw-w64/mingw-w64/mingw-w64-release/mingw-w64-v13.0.0.tar.bz2 \
+    "https://ftpmirror.gnu.org/gnu/binutils/binutils-2.45.tar.xz dee5b4267e0305a99a3c9d6131f45759" \
+    "https://ftpmirror.gnu.org/gnu/gcc/gcc-15.2.0/gcc-15.2.0.tar.xz b861b092bf1af683c46a8aa2e689a6fd" \
+    "https://ftpmirror.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz 956dc04e864001a9c22429f761f2c283" \
+    "https://ftpmirror.gnu.org/gnu/mpc/mpc-1.3.1.tar.gz 5c9bc658c9fd0f940e8e3e0f09530c62" \
+    "https://ftpmirror.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.xz 7c32c39b8b6e3ae85f25156228156061" \
+    "http://gcc.gnu.org/pub/gcc/infrastructure/isl-0.18.tar.bz2 11436d6b205e516635b666090b94ab32" \
+    "https://downloads.sourceforge.net/project/mingw-w64/mingw-w64/mingw-w64-release/mingw-w64-v13.0.0.tar.bz2 b8c58e04a9cb8f2f9474e043ecad2f27" \
 )
 
-for url in ${TARBALLS[@]}
+for line in "${TARBALLS[@]}"
 do
-    TARBALL="${url##*/}"
-    if ! [ -f "$STATEDIR/${TARBALL}-downloaded" ]; then
+    read -r url md5 <<< "$line"
+    tarball="${url##*/}"
+
+    if ! [ "$(md5sum "$TARBALLSDIR/$tarball" | awk '{print $1}')" = "$md5" ]; then
         wget -c -P "$TARBALLSDIR" -T 60 "$url"
     fi
-    touch "$STATEDIR/${TARBALL}-downloaded"
 done
 
 mkdir -p "$BUILDDIR"
@@ -274,7 +275,12 @@ if ! extract mingw-w64-v13.0.0.tar.bz2 MINGW_EXTRACT_DIR > "$STATEDIR/mingw-extr
 fi
 
 if ! checkstate mingw-w64-patched; then
-    patch -d "$MINGW_EXTRACT_DIR" -p1 < "$BASEDIR/patches/winpthreads-disable_debugger_check.diff"
+    #patch -d "$MINGW_EXTRACT_DIR" -p1 < "$BASEDIR/patches/winpthreads-disable_debugger_check.diff"
+    patch -d "$MINGW_EXTRACT_DIR" -p1 < "$BASEDIR/patches/winpthreads-pthread9x.diff"
+    pushd . > /dev/null
+    cd "$MINGW_EXTRACT_DIR/mingw-w64-libraries/winpthreads"
+    autoreconf -i
+    popd > /dev/null
     writestate mingw-w64-patched
 fi
 

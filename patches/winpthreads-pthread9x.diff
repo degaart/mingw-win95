@@ -1,0 +1,4957 @@
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/lockex.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/lockex.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/lockex.h	1970-01-01 03:00:00.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/lockex.h	2025-10-08 11:50:40.094788339 +0300
+@@ -0,0 +1,14 @@
++#ifndef __9X__LOCKEX_H__INCLUDED__
++#define __9X__LOCKEX_H__INCLUDED__
++
++#define LOCK_INTERNAL_MEM -1
++#define LOCK_INTERNAL_CNT 1
++
++#define LOCK_TOTAL_MAX 32
++
++void crt_locks_init(int count);
++void crt_locks_destroy();
++void crt_lock(int lock_no);
++void crt_unlock(int lock_no);
++
++#endif /* __9X__LOCKEX_H__INCLUDED__ */
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/pthread_compat.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/pthread_compat.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/pthread_compat.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/pthread_compat.h	2025-10-08 11:50:40.094788339 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -60,89 +60,27 @@
+ #ifndef WIN_PTHREADS_PTHREAD_COMPAT_H
+ #define WIN_PTHREADS_PTHREAD_COMPAT_H
+ 
+-#if defined(_USE_32BIT_TIME_T) || (defined(_TIME_BITS) && _TIME_BITS == 32)
+-#define WINPTHREADS_TIME_BITS 32
+-#else
+-#define WINPTHREADS_TIME_BITS 64
+-#endif
+-
+-#if defined(IN_WINPTHREAD)
+-#  if defined(DLL_EXPORT)
+-#    define WINPTHREAD_API  __declspec(dllexport)  /* building the DLL  */
+-#  else
+-#    define WINPTHREAD_API  /* building the static library  */
+-#  endif
+-#else
+-#  if defined(WINPTHREADS_USE_DLLIMPORT)
+-#    define WINPTHREAD_API  __declspec(dllimport)  /* user wants explicit `dllimport`  */
+-#  else
+-#    define WINPTHREAD_API  /* the default; auto imported in case of DLL  */
+-#  endif
+-#endif
+-
+-#ifndef __clockid_t_defined
+-typedef int clockid_t;
+-#define __clockid_t_defined 1
+-#endif  /* __clockid_t_defined */
+-
+-#ifndef _MODE_T_
+-#define	_MODE_T_
+-typedef unsigned short mode_t;
+-#endif
+-
+-/* Error-codes.  */
+-#ifndef ETIMEDOUT
+-#define ETIMEDOUT	138
+-#endif
+-#ifndef ENOTSUP
+-#define ENOTSUP		129
+-#endif
+-#ifndef EWOULDBLOCK
+-#define EWOULDBLOCK	140
+-#endif
+-
+ #ifdef __GNUC__
+ 
+-#define WINPTHREADS_INLINE __inline__
+-#define WINPTHREADS_ALWAYS_INLINE __inline__ __attribute__((__always_inline__))
++#define WINPTHREADS_INLINE inline
+ #define WINPTHREADS_ATTRIBUTE(X) __attribute__(X)
+ #define WINPTHREADS_SECTION(X) __section__(X)
+ 
+ #elif _MSC_VER
+ 
++#include "pthread_time.h"
++
+ #ifdef _WIN64
+ typedef __int64 pid_t;
+ #else
+ typedef int     pid_t;
+ #endif
++typedef int clockid_t;
+ 
+ #define WINPTHREADS_INLINE __inline
+-#define WINPTHREADS_ALWAYS_INLINE __inline __forceinline
+ #define WINPTHREADS_ATTRIBUTE(X) __declspec X
+ #define WINPTHREADS_SECTION(X) allocate(X)
+ 
+ #endif
+ 
+-#ifndef WINPTHREAD_CLOCK_DECL
+-#define WINPTHREAD_CLOCK_DECL static WINPTHREADS_ALWAYS_INLINE
+-#endif
+-#ifndef WINPTHREAD_COND_DECL
+-#define WINPTHREAD_COND_DECL static WINPTHREADS_ALWAYS_INLINE
+-#endif
+-#ifndef WINPTHREAD_MUTEX_DECL
+-#define WINPTHREAD_MUTEX_DECL static WINPTHREADS_ALWAYS_INLINE
+-#endif
+-#ifndef WINPTHREAD_NANOSLEEP_DECL
+-#define WINPTHREAD_NANOSLEEP_DECL static WINPTHREADS_ALWAYS_INLINE
+-#endif
+-#ifndef WINPTHREAD_RWLOCK_DECL
+-#define WINPTHREAD_RWLOCK_DECL static WINPTHREADS_ALWAYS_INLINE
+-#endif
+-#ifndef WINPTHREAD_SEM_DECL
+-#define WINPTHREAD_SEM_DECL static WINPTHREADS_ALWAYS_INLINE
+-#endif
+-#ifndef WINPTHREAD_THREAD_DECL
+-#define WINPTHREAD_THREAD_DECL static WINPTHREADS_ALWAYS_INLINE
+-#endif
+-
+ #endif
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/pthread.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/pthread.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/pthread.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/pthread.h	2025-10-08 11:50:40.094788339 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016 mingw-w64 project
++   Copyright (c) 2011-2013 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -66,14 +66,10 @@
+ #include <process.h>
+ #include <limits.h>
+ #include <signal.h>
+-#include <time.h>
+ 
+-#include "pthread_compat.h"
+-#include "sched.h"
++#include <sys/timeb.h>
+ 
+-#ifdef _MSC_VER
+-#include "pthread_time.h"
+-#endif
++#include "pthread_compat.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+@@ -86,9 +82,32 @@ extern "C" {
+ /* MSB 8-bit major version, 8-bit minor version, 16-bit patch level.  */
+ #define __WINPTHREADS_VERSION 0x00050000
+ 
++#if defined DLL_EXPORT
++#ifdef IN_WINPTHREAD
++#define WINPTHREAD_API __declspec(dllexport)
++#else
++#define WINPTHREAD_API __declspec(dllimport)
++#endif
++#else
++#define WINPTHREAD_API
++#endif
++
++/* #define WINPTHREAD_DBG 1 */
++
+ /* Compatibility stuff: */
+ #define RWLS_PER_THREAD						8
+ 
++/* Error-codes.  */
++#ifndef ETIMEDOUT
++#define ETIMEDOUT	138
++#endif
++#ifndef ENOTSUP
++#define ENOTSUP		129
++#endif
++#ifndef EWOULDBLOCK
++#define EWOULDBLOCK	140
++#endif
++
+ /* pthread specific defines.  */
+ 
+ #define PTHREAD_CANCEL_DISABLE 0
+@@ -138,19 +157,10 @@ extern "C" {
+ #define PTHREAD_MUTEX_ERRORCHECK_NP	PTHREAD_MUTEX_ERRORCHECK
+ #define PTHREAD_MUTEX_RECURSIVE_NP	PTHREAD_MUTEX_RECURSIVE
+ 
+-WINPTHREAD_API void * pthread_timechange_handler_np(void * dummy);
+-WINPTHREAD_API int    pthread_delay32_np (const struct _timespec32 *interval);
+-WINPTHREAD_API int    pthread_delay64_np (const struct _timespec64 *interval);
+-WINPTHREAD_THREAD_DECL int    pthread_delay_np (const struct timespec *interval)
+-{
+-#if WINPTHREADS_TIME_BITS == 32
+-  return pthread_delay32_np ((const struct _timespec32 *) interval);
+-#else
+-  return pthread_delay64_np ((const struct _timespec64 *) interval);
+-#endif
+-}
+-WINPTHREAD_API int    pthread_num_processors_np(void);
+-WINPTHREAD_API int    pthread_set_num_processors_np(int n);
++void * WINPTHREAD_API pthread_timechange_handler_np(void * dummy);
++int    WINPTHREAD_API pthread_delay_np (const struct timespec *interval);
++int    WINPTHREAD_API pthread_num_processors_np(void);
++int    WINPTHREAD_API pthread_set_num_processors_np(int n);
+ 
+ #define PTHREAD_BARRIER_SERIAL_THREAD 1
+ 
+@@ -165,7 +175,7 @@ WINPTHREAD_API int    pthread_set_num_pr
+ #define pthread_mutex_setprioceiling(M, P) ENOTSUP
+ #define pthread_getcpuclockid(T, C) ENOTSUP
+ #define pthread_attr_getguardsize(A, S) ENOTSUP
+-#define pthread_attr_setguardsize(A, S) ENOTSUP
++#define pthread_attr_setgaurdsize(A, S) ENOTSUP
+ 
+ typedef long pthread_once_t;
+ typedef unsigned pthread_mutexattr_t;
+@@ -173,6 +183,16 @@ typedef unsigned pthread_key_t;
+ typedef void *pthread_barrierattr_t;
+ typedef int pthread_condattr_t;
+ typedef int pthread_rwlockattr_t;
++
++/*
++struct _pthread_v;
++
++typedef struct pthread_t {
++  struct _pthread_v *p;
++  int x;
++} pthread_t;
++*/
++
+ typedef uintptr_t pthread_t;
+ 
+ typedef struct _pthread_cleanup _pthread_cleanup;
+@@ -183,31 +203,50 @@ struct _pthread_cleanup
+     _pthread_cleanup *next;
+ };
+ 
+-/* Using MemoryBarrier() requires including Windows headers. User code
+- * may want to use pthread_cleanup_push without including Windows headers
+- * first, thus prefer GCC specific intrinsics where possible. */
+-#ifdef __GNUC__
+-#define __pthread_MemoryBarrier() __sync_synchronize()
+-#else
+-#define __pthread_MemoryBarrier() MemoryBarrier()
++#define pthread_cleanup_push(F, A)\
++{\
++    const _pthread_cleanup _pthread_cup = {(F), (A), *pthread_getclean()};\
++    __sync_synchronize();\
++    *pthread_getclean() = (_pthread_cleanup *) &_pthread_cup;\
++    __sync_synchronize()
++
++/* Note that if async cancelling is used, then there is a race here */
++#define pthread_cleanup_pop(E)\
++    (*pthread_getclean() = _pthread_cup.next, (E?_pthread_cup.func((pthread_once_t *)_pthread_cup.arg):0));}
++
++/* Windows doesn't have this, so declare it ourselves. */
++#ifndef _TIMESPEC_DEFINED
++#define _TIMESPEC_DEFINED
++struct timespec {
++  time_t  tv_sec;   /* Seconds */
++  long    tv_nsec;  /* Nanoseconds */
++};
++
++struct itimerspec {
++  struct timespec  it_interval;  /* Timer period */
++  struct timespec  it_value;     /* Timer expiration */
++};
+ #endif
+ 
+-#define pthread_cleanup_push(F, A)                                      \
+-    do {                                                                \
+-        const _pthread_cleanup _pthread_cup =                           \
+-            { (F), (A), *pthread_getclean() };                          \
+-        __pthread_MemoryBarrier();                                      \
+-        *pthread_getclean() = (_pthread_cleanup *) &_pthread_cup;       \
+-        __pthread_MemoryBarrier();                                      \
+-        do {                                                            \
+-            do {} while (0)
++#ifndef SCHED_OTHER
++/* Some POSIX realtime extensions, mostly stubbed */
++#define SCHED_OTHER     0
++#define SCHED_FIFO      1
++#define SCHED_RR        2
++#define SCHED_MIN       SCHED_OTHER
++#define SCHED_MAX       SCHED_RR
+ 
+-/* Note that if async cancelling is used, then there is a race here */
+-#define pthread_cleanup_pop(E)                                          \
+-        } while (0);                                                    \
+-        *pthread_getclean() = _pthread_cup.next;                        \
+-        if ((E)) _pthread_cup.func((pthread_once_t *)_pthread_cup.arg); \
+-    } while (0)
++struct sched_param {
++  int sched_priority;
++};
++
++int WINPTHREAD_API sched_yield(void);
++int WINPTHREAD_API sched_get_priority_min(int pol);
++int WINPTHREAD_API sched_get_priority_max(int pol);
++int WINPTHREAD_API sched_getscheduler(pid_t pid);
++int WINPTHREAD_API sched_setscheduler(pid_t pid, int pol, const struct sched_param *param);
++
++#endif
+ 
+ typedef struct pthread_attr_t pthread_attr_t;
+ struct pthread_attr_t
+@@ -218,28 +257,28 @@ struct pthread_attr_t
+     struct sched_param param;
+ };
+ 
+-WINPTHREAD_API int pthread_attr_setschedparam(pthread_attr_t *attr, const struct sched_param *param);
+-WINPTHREAD_API int pthread_attr_getschedparam(const pthread_attr_t *attr, struct sched_param *param);
+-WINPTHREAD_API int pthread_getschedparam(pthread_t thread, int *pol, struct sched_param *param);
+-WINPTHREAD_API int pthread_setschedparam(pthread_t thread, int pol, const struct sched_param *param);
+-WINPTHREAD_API int pthread_attr_setschedpolicy (pthread_attr_t *attr, int pol);
+-WINPTHREAD_API int pthread_attr_getschedpolicy (const pthread_attr_t *attr, int *pol);
++int WINPTHREAD_API pthread_attr_setschedparam(pthread_attr_t *attr, const struct sched_param *param);
++int WINPTHREAD_API pthread_attr_getschedparam(const pthread_attr_t *attr, struct sched_param *param);
++int WINPTHREAD_API pthread_getschedparam(pthread_t thread, int *pol, struct sched_param *param);
++int WINPTHREAD_API pthread_setschedparam(pthread_t thread, int pol, const struct sched_param *param);
++int WINPTHREAD_API pthread_attr_setschedpolicy (pthread_attr_t *attr, int pol);
++int WINPTHREAD_API pthread_attr_getschedpolicy (pthread_attr_t *attr, int *pol);
+ 
+ /* synchronization objects */
+-typedef intptr_t pthread_spinlock_t;
+-typedef intptr_t pthread_mutex_t;
+-typedef intptr_t pthread_cond_t;
+-typedef intptr_t pthread_rwlock_t;
++typedef void	*pthread_spinlock_t;
++typedef void	*pthread_mutex_t;
++typedef void	*pthread_cond_t;
++typedef void	*pthread_rwlock_t;
+ typedef void	*pthread_barrier_t;
+ 
+ #define PTHREAD_MUTEX_NORMAL 0
+ #define PTHREAD_MUTEX_ERRORCHECK 1
+ #define PTHREAD_MUTEX_RECURSIVE 2
+ 
+-#define GENERIC_INITIALIZER				-1
+-#define GENERIC_ERRORCHECK_INITIALIZER			-2
+-#define GENERIC_RECURSIVE_INITIALIZER			-3
+-#define GENERIC_NORMAL_INITIALIZER			-1
++#define GENERIC_INITIALIZER				((void *) (size_t) -1)
++#define GENERIC_ERRORCHECK_INITIALIZER			((void *) (size_t) -2)
++#define GENERIC_RECURSIVE_INITIALIZER			((void *) (size_t) -3)
++#define GENERIC_NORMAL_INITIALIZER			((void *) (size_t) -1)
+ #define PTHREAD_MUTEX_INITIALIZER			(pthread_mutex_t)GENERIC_INITIALIZER
+ #define PTHREAD_RECURSIVE_MUTEX_INITIALIZER		(pthread_mutex_t)GENERIC_RECURSIVE_INITIALIZER
+ #define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER		(pthread_mutex_t)GENERIC_ERRORCHECK_INITIALIZER
+@@ -249,169 +288,132 @@ typedef void	*pthread_barrier_t;
+ #define PTHREAD_RWLOCK_INITIALIZER			(pthread_rwlock_t)GENERIC_INITIALIZER
+ #define PTHREAD_SPINLOCK_INITIALIZER			(pthread_spinlock_t)GENERIC_INITIALIZER
+ 
+-WINPTHREAD_API extern void (**_pthread_key_dest)(void *);
+-WINPTHREAD_API int         pthread_key_create(pthread_key_t *key, void (* dest)(void *));
+-WINPTHREAD_API int         pthread_key_delete(pthread_key_t key);
+-WINPTHREAD_API void *      pthread_getspecific(pthread_key_t key);
+-WINPTHREAD_API int         pthread_setspecific(pthread_key_t key, const void *value);
+-
+-WINPTHREAD_API pthread_t pthread_self(void);
+-WINPTHREAD_API int       pthread_once(pthread_once_t *o, void (*func)(void));
+-WINPTHREAD_API void      pthread_testcancel(void);
+-WINPTHREAD_API int       pthread_equal(pthread_t t1, pthread_t t2);
+-WINPTHREAD_API void      pthread_tls_init(void);
+-WINPTHREAD_API void      _pthread_cleanup_dest(pthread_t t);
+-WINPTHREAD_API int       pthread_get_concurrency(int *val);
+-WINPTHREAD_API int       pthread_set_concurrency(int val);
+-WINPTHREAD_API void      pthread_exit(void *res);
+-WINPTHREAD_API void      _pthread_invoke_cancel(void);
+-WINPTHREAD_API int       pthread_cancel(pthread_t t);
+-WINPTHREAD_API int       pthread_kill(pthread_t t, int sig);
+-WINPTHREAD_API unsigned  _pthread_get_state(const pthread_attr_t *attr, unsigned flag);
+-WINPTHREAD_API int       _pthread_set_state(pthread_attr_t *attr, unsigned flag, unsigned val);
+-WINPTHREAD_API int       pthread_setcancelstate(int state, int *oldstate);
+-WINPTHREAD_API int       pthread_setcanceltype(int type, int *oldtype);
+-WINPTHREAD_API unsigned  __stdcall pthread_create_wrapper(void *args);
+-WINPTHREAD_API int       pthread_create(pthread_t *th, const pthread_attr_t *attr, void *(* func)(void *), void *arg);
+-WINPTHREAD_API int       pthread_join(pthread_t t, void **res);
+-WINPTHREAD_API int       pthread_detach(pthread_t t);
+-WINPTHREAD_API int       pthread_setname_np(pthread_t thread, const char *name);
+-WINPTHREAD_API int       pthread_getname_np(pthread_t thread, char *name, size_t len);
+-
+-WINPTHREAD_API int pthread_rwlock_init(pthread_rwlock_t *rwlock_, const pthread_rwlockattr_t *attr);
+-WINPTHREAD_API int pthread_rwlock_wrlock(pthread_rwlock_t *l);
+-WINPTHREAD_API int pthread_rwlock_timedwrlock32(pthread_rwlock_t *rwlock, const struct _timespec32 *ts);
+-WINPTHREAD_API int pthread_rwlock_timedwrlock64(pthread_rwlock_t *rwlock, const struct _timespec64 *ts);
+-WINPTHREAD_RWLOCK_DECL int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock, const struct timespec *ts)
+-{
+-#if WINPTHREADS_TIME_BITS == 32
+-  return pthread_rwlock_timedwrlock32 (rwlock, (const struct _timespec32 *) ts);
+-#else
+-  return pthread_rwlock_timedwrlock64 (rwlock, (const struct _timespec64 *) ts);
+-#endif
+-}
+-WINPTHREAD_API int pthread_rwlock_rdlock(pthread_rwlock_t *l);
+-WINPTHREAD_API int pthread_rwlock_timedrdlock32(pthread_rwlock_t *l, const struct _timespec32 *ts);
+-WINPTHREAD_API int pthread_rwlock_timedrdlock64(pthread_rwlock_t *l, const struct _timespec64 *ts);
+-WINPTHREAD_RWLOCK_DECL int pthread_rwlock_timedrdlock(pthread_rwlock_t *l, const struct timespec *ts)
+-{
+-#if WINPTHREADS_TIME_BITS == 32
+-  return pthread_rwlock_timedrdlock32 (l, (const struct _timespec32 *) ts);
+-#else
+-  return pthread_rwlock_timedrdlock64 (l, (const struct _timespec64 *) ts);
+-#endif
+-}
+-WINPTHREAD_API int pthread_rwlock_unlock(pthread_rwlock_t *l);
+-WINPTHREAD_API int pthread_rwlock_tryrdlock(pthread_rwlock_t *l);
+-WINPTHREAD_API int pthread_rwlock_trywrlock(pthread_rwlock_t *l);
+-WINPTHREAD_API int pthread_rwlock_destroy (pthread_rwlock_t *l);
+-
+-WINPTHREAD_API int pthread_cond_init(pthread_cond_t *cv, const pthread_condattr_t *a);
+-WINPTHREAD_API int pthread_cond_destroy(pthread_cond_t *cv);
+-WINPTHREAD_API int pthread_cond_signal (pthread_cond_t *cv);
+-WINPTHREAD_API int pthread_cond_broadcast (pthread_cond_t *cv);
+-WINPTHREAD_API int pthread_cond_wait (pthread_cond_t *cv, pthread_mutex_t *external_mutex);
+-WINPTHREAD_API int pthread_cond_timedwait32(pthread_cond_t *cv, pthread_mutex_t *external_mutex, const struct _timespec32 *t);
+-WINPTHREAD_API int pthread_cond_timedwait64(pthread_cond_t *cv, pthread_mutex_t *external_mutex, const struct _timespec64 *t);
+-WINPTHREAD_COND_DECL int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *external_mutex, const struct timespec *t)
+-{
+-#if WINPTHREADS_TIME_BITS == 32
+-  return pthread_cond_timedwait32 (cv, external_mutex, (const struct _timespec32 *) t);
+-#else
+-  return pthread_cond_timedwait64 (cv, external_mutex, (const struct _timespec64 *) t);
+-#endif
+-}
+-WINPTHREAD_API int pthread_cond_timedwait32_relative_np(pthread_cond_t *cv, pthread_mutex_t *external_mutex, const struct _timespec32 *t);
+-WINPTHREAD_API int pthread_cond_timedwait64_relative_np(pthread_cond_t *cv, pthread_mutex_t *external_mutex, const struct _timespec64 *t);
+-WINPTHREAD_COND_DECL int pthread_cond_timedwait_relative_np(pthread_cond_t *cv, pthread_mutex_t *external_mutex, const struct timespec *t)
+-{
+-#if WINPTHREADS_TIME_BITS == 32
+-  return pthread_cond_timedwait32_relative_np (cv, external_mutex, (const struct _timespec32 *) t);
+-#else
+-  return pthread_cond_timedwait64_relative_np (cv, external_mutex, (const struct _timespec64 *) t);
+-#endif
+-}
+-
+-WINPTHREAD_API int pthread_mutex_lock(pthread_mutex_t *m);
+-WINPTHREAD_API int pthread_mutex_timedlock32(pthread_mutex_t *m, const struct _timespec32 *ts);
+-WINPTHREAD_API int pthread_mutex_timedlock64(pthread_mutex_t *m, const struct _timespec64 *ts);
+-WINPTHREAD_MUTEX_DECL int pthread_mutex_timedlock(pthread_mutex_t *m, const struct timespec *ts)
+-{
+-#if WINPTHREADS_TIME_BITS == 32
+-  return pthread_mutex_timedlock32 (m, (const struct _timespec32 *) ts);
+-#else
+-  return pthread_mutex_timedlock64 (m, (const struct _timespec64 *) ts);
+-#endif
+-}
+-WINPTHREAD_API int pthread_mutex_unlock(pthread_mutex_t *m);
+-WINPTHREAD_API int pthread_mutex_trylock(pthread_mutex_t *m);
+-WINPTHREAD_API int pthread_mutex_init(pthread_mutex_t *m, const pthread_mutexattr_t *a);
+-WINPTHREAD_API int pthread_mutex_destroy(pthread_mutex_t *m);
+-
+-WINPTHREAD_API int pthread_barrier_destroy(pthread_barrier_t *b);
+-WINPTHREAD_API int pthread_barrier_init(pthread_barrier_t *b, const void *attr, unsigned int count);
+-WINPTHREAD_API int pthread_barrier_wait(pthread_barrier_t *b);
++extern void WINPTHREAD_API (**_pthread_key_dest)(void *);
++int         WINPTHREAD_API pthread_key_create(pthread_key_t *key, void (* dest)(void *));
++int         WINPTHREAD_API pthread_key_delete(pthread_key_t key);
++void *      WINPTHREAD_API pthread_getspecific(pthread_key_t key);
++int         WINPTHREAD_API pthread_setspecific(pthread_key_t key, const void *value);
++
++pthread_t WINPTHREAD_API pthread_self(void);
++int       WINPTHREAD_API pthread_once(pthread_once_t *o, void (*func)(void));
++void      WINPTHREAD_API pthread_testcancel(void);
++int       WINPTHREAD_API pthread_equal(pthread_t t1, pthread_t t2);
++void      WINPTHREAD_API pthread_tls_init(void);
++void      WINPTHREAD_API _pthread_cleanup_dest(pthread_t t);
++int       WINPTHREAD_API pthread_get_concurrency(int *val);
++int       WINPTHREAD_API pthread_set_concurrency(int val);
++void      WINPTHREAD_API pthread_exit(void *res);
++void      WINPTHREAD_API _pthread_invoke_cancel(void);
++int       WINPTHREAD_API pthread_cancel(pthread_t t);
++int       WINPTHREAD_API pthread_kill(pthread_t t, int sig);
++unsigned  WINPTHREAD_API _pthread_get_state(const pthread_attr_t *attr, unsigned flag);
++int       WINPTHREAD_API _pthread_set_state(pthread_attr_t *attr, unsigned flag, unsigned val);
++int       WINPTHREAD_API pthread_setcancelstate(int state, int *oldstate);
++int       WINPTHREAD_API pthread_setcanceltype(int type, int *oldtype);
++int       WINPTHREAD_API pthread_create_wrapper(void *args);
++int       WINPTHREAD_API pthread_create(pthread_t *th, const pthread_attr_t *attr, void *(* func)(void *), void *arg);
++int       WINPTHREAD_API pthread_join(pthread_t t, void **res);
++int       WINPTHREAD_API pthread_detach(pthread_t t);
++int       WINPTHREAD_API pthread_setname_np(pthread_t thread, const char *name);
++int       WINPTHREAD_API pthread_getname_np(pthread_t thread, char *name, size_t len);
++
++
++int WINPTHREAD_API pthread_rwlock_init(pthread_rwlock_t *rwlock_, const pthread_rwlockattr_t *attr);
++int WINPTHREAD_API pthread_rwlock_wrlock(pthread_rwlock_t *l);
++int WINPTHREAD_API pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock, const struct timespec *ts);
++int WINPTHREAD_API pthread_rwlock_rdlock(pthread_rwlock_t *l);
++int WINPTHREAD_API pthread_rwlock_timedrdlock(pthread_rwlock_t *l, const struct timespec *ts);
++int WINPTHREAD_API pthread_rwlock_unlock(pthread_rwlock_t *l);
++int WINPTHREAD_API pthread_rwlock_tryrdlock(pthread_rwlock_t *l);
++int WINPTHREAD_API pthread_rwlock_trywrlock(pthread_rwlock_t *l);
++int WINPTHREAD_API pthread_rwlock_destroy (pthread_rwlock_t *l);
++
++int WINPTHREAD_API pthread_cond_init(pthread_cond_t *cv, const pthread_condattr_t *a);
++int WINPTHREAD_API pthread_cond_destroy(pthread_cond_t *cv);
++int WINPTHREAD_API pthread_cond_signal (pthread_cond_t *cv);
++int WINPTHREAD_API pthread_cond_broadcast (pthread_cond_t *cv);
++int WINPTHREAD_API pthread_cond_wait (pthread_cond_t *cv, pthread_mutex_t *external_mutex);
++int WINPTHREAD_API pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *external_mutex, const struct timespec *t);
++int WINPTHREAD_API pthread_cond_timedwait_relative_np(pthread_cond_t *cv, pthread_mutex_t *external_mutex, const struct timespec *t);
++
++int WINPTHREAD_API pthread_mutex_lock(pthread_mutex_t *m);
++int WINPTHREAD_API pthread_mutex_timedlock(pthread_mutex_t *m, const struct timespec *ts);
++int WINPTHREAD_API pthread_mutex_unlock(pthread_mutex_t *m);
++int WINPTHREAD_API pthread_mutex_trylock(pthread_mutex_t *m);
++int WINPTHREAD_API pthread_mutex_init(pthread_mutex_t *m, const pthread_mutexattr_t *a);
++int WINPTHREAD_API pthread_mutex_destroy(pthread_mutex_t *m);
++
++int WINPTHREAD_API pthread_barrier_destroy(pthread_barrier_t *b);
++int WINPTHREAD_API pthread_barrier_init(pthread_barrier_t *b, const void *attr, unsigned int count);
++int WINPTHREAD_API pthread_barrier_wait(pthread_barrier_t *b);
+ 
+-WINPTHREAD_API int pthread_spin_init(pthread_spinlock_t *l, int pshared);
+-WINPTHREAD_API int pthread_spin_destroy(pthread_spinlock_t *l);
++int WINPTHREAD_API pthread_spin_init(pthread_spinlock_t *l, int pshared);
++int WINPTHREAD_API pthread_spin_destroy(pthread_spinlock_t *l);
+ /* No-fair spinlock due to lack of knowledge of thread number.  */
+-WINPTHREAD_API int pthread_spin_lock(pthread_spinlock_t *l);
+-WINPTHREAD_API int pthread_spin_trylock(pthread_spinlock_t *l);
+-WINPTHREAD_API int pthread_spin_unlock(pthread_spinlock_t *l);
+-
+-WINPTHREAD_API int pthread_attr_init(pthread_attr_t *attr);
+-WINPTHREAD_API int pthread_attr_destroy(pthread_attr_t *attr);
+-WINPTHREAD_API int pthread_attr_setdetachstate(pthread_attr_t *a, int flag);
+-WINPTHREAD_API int pthread_attr_getdetachstate(const pthread_attr_t *a, int *flag);
+-WINPTHREAD_API int pthread_attr_setinheritsched(pthread_attr_t *a, int flag);
+-WINPTHREAD_API int pthread_attr_getinheritsched(const pthread_attr_t *a, int *flag);
+-WINPTHREAD_API int pthread_attr_setscope(pthread_attr_t *a, int flag);
+-WINPTHREAD_API int pthread_attr_getscope(const pthread_attr_t *a, int *flag);
+-WINPTHREAD_API int pthread_attr_getstack(const pthread_attr_t *attr, void **stack, size_t *size);
+-WINPTHREAD_API int pthread_attr_setstack(pthread_attr_t *attr, void *stack, size_t size);
+-WINPTHREAD_API int pthread_attr_getstackaddr(const pthread_attr_t *attr, void **stack);
+-WINPTHREAD_API int pthread_attr_setstackaddr(pthread_attr_t *attr, void *stack);
+-WINPTHREAD_API int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *size);
+-WINPTHREAD_API int pthread_attr_setstacksize(pthread_attr_t *attr, size_t size);
+-
+-WINPTHREAD_API int pthread_mutexattr_init(pthread_mutexattr_t *a);
+-WINPTHREAD_API int pthread_mutexattr_destroy(pthread_mutexattr_t *a);
+-WINPTHREAD_API int pthread_mutexattr_gettype(const pthread_mutexattr_t *a, int *type);
+-WINPTHREAD_API int pthread_mutexattr_settype(pthread_mutexattr_t *a, int type);
+-WINPTHREAD_API int pthread_mutexattr_getpshared(const pthread_mutexattr_t *a, int *type);
+-WINPTHREAD_API int pthread_mutexattr_setpshared(pthread_mutexattr_t * a, int type);
+-WINPTHREAD_API int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *a, int *type);
+-WINPTHREAD_API int pthread_mutexattr_setprotocol(pthread_mutexattr_t *a, int type);
+-WINPTHREAD_API int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *a, int * prio);
+-WINPTHREAD_API int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *a, int prio);
+-WINPTHREAD_API int pthread_getconcurrency(void);
+-WINPTHREAD_API int pthread_setconcurrency(int new_level);
+-
+-WINPTHREAD_API int pthread_condattr_destroy(pthread_condattr_t *a);
+-WINPTHREAD_API int pthread_condattr_init(pthread_condattr_t *a);
+-WINPTHREAD_API int pthread_condattr_getpshared(const pthread_condattr_t *a, int *s);
+-WINPTHREAD_API int pthread_condattr_setpshared(pthread_condattr_t *a, int s);
++int WINPTHREAD_API pthread_spin_lock(pthread_spinlock_t *l);
++int WINPTHREAD_API pthread_spin_trylock(pthread_spinlock_t *l);
++int WINPTHREAD_API pthread_spin_unlock(pthread_spinlock_t *l);
++
++int WINPTHREAD_API pthread_attr_init(pthread_attr_t *attr);
++int WINPTHREAD_API pthread_attr_destroy(pthread_attr_t *attr);
++int WINPTHREAD_API pthread_attr_setdetachstate(pthread_attr_t *a, int flag);
++int WINPTHREAD_API pthread_attr_getdetachstate(const pthread_attr_t *a, int *flag);
++int WINPTHREAD_API pthread_attr_setinheritsched(pthread_attr_t *a, int flag);
++int WINPTHREAD_API pthread_attr_getinheritsched(const pthread_attr_t *a, int *flag);
++int WINPTHREAD_API pthread_attr_setscope(pthread_attr_t *a, int flag);
++int WINPTHREAD_API pthread_attr_getscope(const pthread_attr_t *a, int *flag);
++int WINPTHREAD_API pthread_attr_getstackaddr(pthread_attr_t *attr, void **stack);
++int WINPTHREAD_API pthread_attr_setstackaddr(pthread_attr_t *attr, void *stack);
++int WINPTHREAD_API pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *size);
++int WINPTHREAD_API pthread_attr_setstacksize(pthread_attr_t *attr, size_t size);
++
++int WINPTHREAD_API pthread_mutexattr_init(pthread_mutexattr_t *a);
++int WINPTHREAD_API pthread_mutexattr_destroy(pthread_mutexattr_t *a);
++int WINPTHREAD_API pthread_mutexattr_gettype(const pthread_mutexattr_t *a, int *type);
++int WINPTHREAD_API pthread_mutexattr_settype(pthread_mutexattr_t *a, int type);
++int WINPTHREAD_API pthread_mutexattr_getpshared(const pthread_mutexattr_t *a, int *type);
++int WINPTHREAD_API pthread_mutexattr_setpshared(pthread_mutexattr_t * a, int type);
++int WINPTHREAD_API pthread_mutexattr_getprotocol(const pthread_mutexattr_t *a, int *type);
++int WINPTHREAD_API pthread_mutexattr_setprotocol(pthread_mutexattr_t *a, int type);
++int WINPTHREAD_API pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *a, int * prio);
++int WINPTHREAD_API pthread_mutexattr_setprioceiling(pthread_mutexattr_t *a, int prio);
++int WINPTHREAD_API pthread_getconcurrency(void);
++int WINPTHREAD_API pthread_setconcurrency(int new_level);
++
++int WINPTHREAD_API pthread_condattr_destroy(pthread_condattr_t *a);
++int WINPTHREAD_API pthread_condattr_init(pthread_condattr_t *a);
++int WINPTHREAD_API pthread_condattr_getpshared(const pthread_condattr_t *a, int *s);
++int WINPTHREAD_API pthread_condattr_setpshared(pthread_condattr_t *a, int s);
++
++#ifndef __clockid_t_defined
++typedef int clockid_t;
++#define __clockid_t_defined 1
++#endif  /* __clockid_t_defined */
+ 
+-WINPTHREAD_API int pthread_condattr_getclock (const pthread_condattr_t *attr,
++int WINPTHREAD_API pthread_condattr_getclock (const pthread_condattr_t *attr,
+        clockid_t *clock_id);
+-WINPTHREAD_API int pthread_condattr_setclock(pthread_condattr_t *attr,
++int WINPTHREAD_API pthread_condattr_setclock(pthread_condattr_t *attr,
+        clockid_t clock_id);
++int WINPTHREAD_API __pthread_clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp, struct timespec *rmtp);
+ 
+-WINPTHREAD_API int pthread_barrierattr_init(void **attr);
+-WINPTHREAD_API int pthread_barrierattr_destroy(void **attr);
+-WINPTHREAD_API int pthread_barrierattr_setpshared(void **attr, int s);
+-WINPTHREAD_API int pthread_barrierattr_getpshared(void **attr, int *s);
++int WINPTHREAD_API pthread_barrierattr_init(void **attr);
++int WINPTHREAD_API pthread_barrierattr_destroy(void **attr);
++int WINPTHREAD_API pthread_barrierattr_setpshared(void **attr, int s);
++int WINPTHREAD_API pthread_barrierattr_getpshared(void **attr, int *s);
+ 
+ /* Private extensions for analysis and internal use.  */
+-WINPTHREAD_API struct _pthread_cleanup ** pthread_getclean (void);
+-WINPTHREAD_API void * pthread_gethandle (pthread_t t);
+-WINPTHREAD_API void * pthread_getevent (void);
+-
+-WINPTHREAD_API int _pthread_tryjoin (pthread_t t, void **res);
+-WINPTHREAD_API int pthread_rwlockattr_destroy(pthread_rwlockattr_t *a);
+-WINPTHREAD_API int pthread_rwlockattr_getpshared(pthread_rwlockattr_t *a, int *s);
+-WINPTHREAD_API int pthread_rwlockattr_init(pthread_rwlockattr_t *a);
+-WINPTHREAD_API int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *a, int s);
++struct _pthread_cleanup ** WINPTHREAD_API pthread_getclean (void);
++void *                     WINPTHREAD_API pthread_gethandle (pthread_t t);
++void *                     WINPTHREAD_API pthread_getevent ();
++
++unsigned long long         WINPTHREAD_API _pthread_rel_time_in_ms(const struct timespec *ts);
++unsigned long long         WINPTHREAD_API _pthread_time_in_ms(void);
++unsigned long long         WINPTHREAD_API _pthread_time_in_ms_from_timespec(const struct timespec *ts);
++int                        WINPTHREAD_API _pthread_tryjoin (pthread_t t, void **res);
++int                        WINPTHREAD_API pthread_rwlockattr_destroy(pthread_rwlockattr_t *a);
++int                        WINPTHREAD_API pthread_rwlockattr_getpshared(pthread_rwlockattr_t *a, int *s);
++int                        WINPTHREAD_API pthread_rwlockattr_init(pthread_rwlockattr_t *a);
++int                        WINPTHREAD_API pthread_rwlockattr_setpshared(pthread_rwlockattr_t *a, int s);
+ 
+ #ifndef SIG_BLOCK
+ #define SIG_BLOCK 0
+@@ -441,8 +443,7 @@ WINPTHREAD_API int pthread_rwlockattr_se
+ #define SEM_NSEMS_MAX                           1024
+ 
+ /* Wrap cancellation points.  */
+-#if defined(__WINPTHREAD_ENABLE_WRAP_API) \
+-    || defined(__WINPTRHEAD_ENABLE_WRAP_API) /* historical typo */
++#ifdef __WINPTRHEAD_ENABLE_WRAP_API
+ #define accept(...) (pthread_testcancel(), accept(__VA_ARGS__))
+ #define aio_suspend(...) (pthread_testcancel(), aio_suspend(__VA_ARGS__))
+ #define clock_nanosleep(...) (pthread_testcancel(), clock_nanosleep(__VA_ARGS__))
+@@ -688,4 +689,8 @@ WINPTHREAD_API int pthread_rwlockattr_se
+ }
+ #endif
+ 
++#ifdef WINAPI
++BOOL WINAPI TryEnterCriticalSection9x(CRITICAL_SECTION* cs);
++#endif
++
+ #endif /* WIN_PTHREADS_H */
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/pthread_signal.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/pthread_signal.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/pthread_signal.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/pthread_signal.h	2025-10-08 11:50:40.094788339 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2013-2016  mingw-w64 project
++   Copyright (c) 2013 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/pthread_time.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/pthread_time.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/pthread_time.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/pthread_time.h	2025-10-08 11:50:40.094788339 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -20,12 +20,11 @@
+    DEALINGS IN THE SOFTWARE.
+ */
+ 
++#include <sys/timeb.h>
++
+ #ifndef WIN_PTHREADS_TIME_H
+ #define WIN_PTHREADS_TIME_H
+ 
+-#include <sys/timeb.h>
+-#include "pthread_compat.h"
+-
+ /* Posix timers are supported */
+ #ifndef _POSIX_TIMERS
+ #define _POSIX_TIMERS           200809L
+@@ -46,6 +45,11 @@
+ #define _POSIX_THREAD_CPUTIME   200809L
+ #endif
+ 
++#ifndef __clockid_t_defined
++typedef int clockid_t;
++#define __clockid_t_defined 1
++#endif  /* __clockid_t_defined */
++
+ #ifndef TIMER_ABSTIME
+ #define TIMER_ABSTIME   1
+ #endif
+@@ -66,71 +70,29 @@
+ #define CLOCK_THREAD_CPUTIME_ID     3
+ #endif
+ 
+-#ifndef CLOCK_REALTIME_COARSE
+-#define CLOCK_REALTIME_COARSE       4
+-#endif
+-
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+ 
+-WINPTHREAD_API int __cdecl nanosleep32(const struct _timespec32 *request, struct _timespec32 *remain);
+-WINPTHREAD_API int __cdecl nanosleep64(const struct _timespec64 *request, struct _timespec64 *remain);
+-WINPTHREAD_NANOSLEEP_DECL int __cdecl nanosleep(const struct timespec *request, struct timespec *remain)
+-{
+-#if WINPTHREADS_TIME_BITS == 32
+-  return nanosleep32 ((struct _timespec32 *)request, (struct _timespec32 *)remain);
+-#else
+-  return nanosleep64 ((struct _timespec64 *)request, (struct _timespec64 *)remain);
+-#endif
+-}
+-
+-WINPTHREAD_API int __cdecl clock_nanosleep32(clockid_t clock_id, int flags, const struct _timespec32 *request, struct _timespec32 *remain);
+-WINPTHREAD_API int __cdecl clock_nanosleep64(clockid_t clock_id, int flags, const struct _timespec64 *request, struct _timespec64 *remain);
+-WINPTHREAD_CLOCK_DECL int __cdecl clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
+-{
+-#if WINPTHREADS_TIME_BITS == 32
+-  return clock_nanosleep32 (clock_id, flags, (struct _timespec32 *)request, (struct _timespec32 *)remain);
+-#else
+-  return clock_nanosleep64 (clock_id, flags, (struct _timespec64 *)request, (struct _timespec64 *)remain);
++/* Make sure we provide default for WINPTHREAD_API, if not defined.  */
++#pragma push_macro("WINPTHREAD_API")
++#ifndef WINPTHREAD_API
++#define WINPTHREAD_API
+ #endif
+-}
+ 
+-WINPTHREAD_API int __cdecl clock_getres32(clockid_t clock_id, struct _timespec32 *res);
+-WINPTHREAD_API int __cdecl clock_getres64(clockid_t clock_id, struct _timespec64 *res);
+-WINPTHREAD_CLOCK_DECL int __cdecl clock_getres(clockid_t clock_id, struct timespec *res)
+-{
+-#if WINPTHREADS_TIME_BITS == 32
+-  return clock_getres32 (clock_id, (struct _timespec32 *)res);
+-#else
+-  return clock_getres64 (clock_id, (struct _timespec64 *)res);
+-#endif
+-}
++/* These should really be dllimport'ed if using winpthread dll */
++int __cdecl WINPTHREAD_API nanosleep(const struct timespec *request, struct timespec *remain);
+ 
+-WINPTHREAD_API int __cdecl clock_gettime32(clockid_t clock_id, struct _timespec32 *tp);
+-WINPTHREAD_API int __cdecl clock_gettime64(clockid_t clock_id, struct _timespec64 *tp);
+-WINPTHREAD_CLOCK_DECL int __cdecl clock_gettime(clockid_t clock_id, struct timespec *tp)
+-{
+-#if WINPTHREADS_TIME_BITS == 32
+-  return clock_gettime32 (clock_id, (struct _timespec32 *)tp);
+-#else
+-  return clock_gettime64 (clock_id, (struct _timespec64 *)tp);
+-#endif
+-}
++int __cdecl WINPTHREAD_API clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain);
++int __cdecl WINPTHREAD_API clock_getres(clockid_t clock_id, struct timespec *res);
++int __cdecl WINPTHREAD_API clock_gettime(clockid_t clock_id, struct timespec *tp);
++int __cdecl WINPTHREAD_API clock_settime(clockid_t clock_id, const struct timespec *tp);
+ 
+-WINPTHREAD_API int __cdecl clock_settime32(clockid_t clock_id, const struct _timespec32 *tp);
+-WINPTHREAD_API int __cdecl clock_settime64(clockid_t clock_id, const struct _timespec64 *tp);
+-WINPTHREAD_CLOCK_DECL int __cdecl clock_settime(clockid_t clock_id, const struct timespec *tp)
+-{
+-#if WINPTHREADS_TIME_BITS == 32
+-  return clock_settime32 (clock_id, (struct _timespec32 *)tp);
+-#else
+-  return clock_settime64 (clock_id, (struct _timespec64 *)tp);
+-#endif
+-}
++#pragma pop_macro("WINPTHREAD_API")
+ 
+ #ifdef __cplusplus
+ }
+ #endif
+ 
+ #endif /* WIN_PTHREADS_TIME_H */
++
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/pthread_unistd.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/pthread_unistd.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/pthread_unistd.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/pthread_unistd.h	2025-10-08 11:50:40.094788339 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -129,6 +129,26 @@
+ #undef _POSIX_BARRIERS
+ #define _POSIX_BARRIERS 200112L
+ 
++/* _SC_THREAD_SAFE_FUNCTIONS
++  Affected functions are
++
++  readdir_r(),
++  getgrgid_r(),
++  getgrnam_r(),
++  getpwnam_r(),
++  getpwuid_r(),
++  flockfile(),
++  ftrylockfile(),
++  funlockfile(),
++  getc_unlocked(),
++  getchar_unlocked(),
++  putc_unlocked(),
++  putchar_unlocked(),
++  strerror_r(),
++*/
++#undef _POSIX_THREAD_SAFE_FUNCTIONS
++#define _POSIX_THREAD_SAFE_FUNCTIONS 200112L
++
+ /* _SC_TIMEOUTS
+   The functions
+ 
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/sched.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/sched.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/sched.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/sched.h	2025-10-08 11:50:40.094788339 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011-2013 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -19,8 +19,6 @@
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+    DEALINGS IN THE SOFTWARE.
+ */
+-#ifndef WIN_PTHREADS_SCHED_H
+-#define WIN_PTHREADS_SCHED_H
+ 
+ #include <stddef.h>
+ #include <errno.h>
+@@ -30,8 +28,12 @@
+ #include <limits.h>
+ #include <signal.h>
+ 
+-#include "pthread_compat.h"
++#include <sys/timeb.h>
++
++#ifndef WIN_PTHREADS_SCHED_H
++#define WIN_PTHREADS_SCHED_H
+ 
++#ifndef SCHED_OTHER
+ /* Some POSIX realtime extensions, mostly stubbed */
+ #define SCHED_OTHER     0
+ #define SCHED_FIFO      1
+@@ -47,16 +49,28 @@ struct sched_param {
+ extern "C" {
+ #endif
+ 
+-WINPTHREAD_API int sched_yield(void);
+-WINPTHREAD_API int sched_get_priority_min(int pol);
+-WINPTHREAD_API int sched_get_priority_max(int pol);
+-WINPTHREAD_API int sched_getscheduler(pid_t pid);
+-WINPTHREAD_API int sched_setscheduler(pid_t pid, int pol, const struct sched_param *param);
++#if defined DLL_EXPORT && !defined (WINPTHREAD_EXPORT_ALL_DEBUG)
++#ifdef IN_WINPTHREAD
++#define WINPTHREAD_SCHED_API __declspec(dllexport)
++#else
++#define WINPTHREAD_SCHED_API __declspec(dllimport)
++#endif
++#else
++#define WINPTHREAD_SCHED_API
++#endif
++
++int WINPTHREAD_SCHED_API sched_yield(void);
++int WINPTHREAD_SCHED_API sched_get_priority_min(int pol);
++int WINPTHREAD_SCHED_API sched_get_priority_max(int pol);
++int WINPTHREAD_SCHED_API sched_getscheduler(pid_t pid);
++int WINPTHREAD_SCHED_API sched_setscheduler(pid_t pid, int pol, const struct sched_param *param);
+ 
+ #ifdef __cplusplus
+ }
+ #endif
+ 
++#endif
++
+ #ifndef sched_rr_get_interval
+ #define sched_rr_get_interval(_p, _i) \
+   ( errno = ENOTSUP, (int) -1 )
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/semaphore.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/semaphore.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/include/semaphore.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/include/semaphore.h	2025-10-08 11:50:40.094788339 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -23,50 +23,57 @@
+ #ifndef WIN_PTHREADS_SEMAPHORE_H
+ #define WIN_PTHREADS_SEMAPHORE_H
+ 
+-#include <sys/timeb.h>
+-#include "pthread_compat.h"
+-
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+ 
+-#define SEM_VALUE_MAX   INT_MAX
++#if defined DLL_EXPORT && !defined (WINPTHREAD_EXPORT_ALL_DEBUG)
++#ifdef IN_WINPTHREAD
++#define WINPTHREAD_SEMA_API __declspec(dllexport)
++#else
++#define WINPTHREAD_SEMA_API __declspec(dllimport)
++#endif
++#else
++#define WINPTHREAD_SEMA_API
++#endif
++
++/* Set this to 0 to disable it */
++#define USE_SEM_CriticalSection_SpinCount	100
++
++//#define SEM_VALUE_MAX   INT_MAX
++#define SEM_VALUE_MAX   (INT_MAX/2)
++
++#ifndef _MODE_T_
++#define	_MODE_T_
++typedef unsigned short mode_t;
++#endif
+ 
+ typedef void		*sem_t;
+ 
+ #define SEM_FAILED 		NULL
+ 
+-WINPTHREAD_API int sem_init(sem_t * sem, int pshared, unsigned int value);
++int WINPTHREAD_SEMA_API sem_init(sem_t * sem, int pshared, unsigned int value);
+ 
+-WINPTHREAD_API int sem_destroy(sem_t *sem);
++int WINPTHREAD_SEMA_API sem_destroy(sem_t *sem);
+ 
+-WINPTHREAD_API int sem_trywait(sem_t *sem);
++int WINPTHREAD_SEMA_API sem_trywait(sem_t *sem);
+ 
+-WINPTHREAD_API int sem_wait(sem_t *sem);
++int WINPTHREAD_SEMA_API sem_wait(sem_t *sem);
+ 
+-WINPTHREAD_API int sem_timedwait32(sem_t * sem, const struct _timespec32 *t);
+-WINPTHREAD_API int sem_timedwait64(sem_t * sem, const struct _timespec64 *t);
+-WINPTHREAD_SEM_DECL int sem_timedwait(sem_t * sem, const struct timespec *t)
+-{
+-#if WINPTHREADS_TIME_BITS == 32
+-  return sem_timedwait32 (sem, (const struct _timespec32 *) t);
+-#else
+-  return sem_timedwait64 (sem, (const struct _timespec64 *) t);
+-#endif
+-}
++int WINPTHREAD_SEMA_API sem_timedwait(sem_t * sem, const struct timespec *t);
+ 
+-WINPTHREAD_API int sem_post(sem_t *sem);
++int WINPTHREAD_SEMA_API sem_post(sem_t *sem);
+ 
+-WINPTHREAD_API int sem_post_multiple(sem_t *sem, int count);
++int WINPTHREAD_SEMA_API sem_post_multiple(sem_t *sem, int count);
+ 
+ /* yes, it returns a semaphore (or SEM_FAILED) */
+-WINPTHREAD_API sem_t * sem_open(const char * name, int oflag, mode_t mode, unsigned int value);
++sem_t * WINPTHREAD_SEMA_API sem_open(const char * name, int oflag, mode_t mode, unsigned int value);
+ 
+-WINPTHREAD_API int sem_close(sem_t * sem);
++int WINPTHREAD_SEMA_API sem_close(sem_t * sem);
+ 
+-WINPTHREAD_API int sem_unlink(const char * name);
++int WINPTHREAD_SEMA_API sem_unlink(const char * name);
+ 
+-WINPTHREAD_API int sem_getvalue(sem_t * sem, int * sval);
++int WINPTHREAD_SEMA_API sem_getvalue(sem_t * sem, int * sval);
+ 
+ #ifdef __cplusplus
+ }
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/Makefile.am mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/Makefile.am
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/Makefile.am	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/Makefile.am	2025-10-08 13:38:15.573481314 +0300
+@@ -6,29 +6,45 @@ ACLOCAL_AMFLAGS = -I m4
+ 
+ lib_LTLIBRARIES = libwinpthread.la
+ 
++../../../pthread9x/include:
++
++../../../pthread9x/src:
++
+ include_HEADERS =          \
+-  include/pthread.h        \
++  include/lockex.h \
+   include/pthread_compat.h \
++  include/pthread.h \
+   include/pthread_signal.h \
+-  include/pthread_time.h   \
++  include/pthread_time.h \
+   include/pthread_unistd.h \
+-  include/sched.h          \
++  include/sched.h \
+   include/semaphore.h
+ 
+ libwinpthread_la_SOURCES =      \
+-  src/barrier.c   src/barrier.h \
+-  src/clock.c                   \
+-  src/cond.c      src/cond.h    \
+-  src/misc.c      src/misc.h    \
+-  src/mutex.c                   \
+-  src/nanosleep.c               \
+-  src/rwlock.c    src/rwlock.h  \
+-  src/sem.c       src/sem.h     \
+-  src/spinlock.c                \
+-  src/sched.c                   \
+-  src/thread.c    src/thread.h  \
+-  src/wpth_ver.h                \
+-  src/version.rc
++  src/barrier.c \
++  src/barrier.h \
++  src/clock.c \
++  src/cond.c \
++  src/cond.h \
++  src/misc.c \
++  src/misc.h \
++  src/mutex.c \
++  src/mutex.h \
++  src/nanosleep.c \
++  src/ref.c \
++  src/ref.h \
++  src/rwlock.c \
++  src/rwlock.h \
++  src/sched.c \
++  src/sem.c \
++  src/sem.h \
++  src/spinlock.c \
++  src/thread.c \
++  src/thread.h \
++  src/tryentercriticalsection.c \
++  src/version.rc \
++  src/winpthread_internal.h \
++  src/wpth_ver.h
+ 
+ libwinpthread_la_CPPFLAGS = -I$(srcdir)/include -DIN_WINPTHREAD
+ libwinpthread_la_LDFLAGS = -no-undefined -version-info 1:0:0
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/barrier.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/barrier.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/barrier.c	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/barrier.c	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -20,22 +20,12 @@
+    DEALINGS IN THE SOFTWARE.
+ */
+ 
+-#ifdef HAVE_CONFIG_H
+-#include "config.h"
+-#endif
+-
+-#include <assert.h>
+-#include <malloc.h>
+-#include <stdio.h>
+-
+-#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+-
+-/* public header files */
++#include <stdio.h>
++#include <malloc.h>
+ #include "pthread.h"
+-#include "semaphore.h"
+-/* internal header files */
+ #include "barrier.h"
++#include "ref.h" 
+ #include "misc.h"
+ 
+ static pthread_spinlock_t barrier_global = PTHREAD_SPINLOCK_INITIALIZER;
+@@ -44,7 +34,9 @@ static WINPTHREADS_ATTRIBUTE((noinline))
+ barrier_unref(volatile pthread_barrier_t *barrier, int res)
+ {
+     pthread_spin_lock(&barrier_global);
++#ifdef WINPTHREAD_DBG
+     assert((((barrier_t *)*barrier)->valid == LIFE_BARRIER) && (((barrier_t *)*barrier)->busy > 0));
++#endif
+      ((barrier_t *)*barrier)->busy -= 1;
+     pthread_spin_unlock(&barrier_global);
+     return res;
+@@ -72,7 +64,7 @@ barrier_ref_destroy(volatile pthread_bar
+ 
+     *bDestroy = NULL;
+     pthread_spin_lock(&barrier_global);
+-
++    
+     if (!barrier || !*barrier || ((barrier_t *)*barrier)->valid != LIFE_BARRIER) r = EINVAL;
+     else {
+         barrier_t *b_ = (barrier_t *)*barrier;
+@@ -100,15 +92,15 @@ int pthread_barrier_destroy(pthread_barr
+     pthread_barrier_t bDestroy;
+     barrier_t *b;
+     int r;
+-
++    
+     while ((r = barrier_ref_destroy(b_,&bDestroy)) == EBUSY)
+       Sleep(0);
+-
++    
+     if (r)
+       return r;
+ 
+     b = (barrier_t *)bDestroy;
+-
++    
+     pthread_mutex_lock(&b->m);
+ 
+     if (sem_destroy(&b->sems[0]) != 0)
+@@ -147,7 +139,7 @@ pthread_barrier_init (pthread_barrier_t
+     if (!count || !b_)
+       return EINVAL;
+ 
+-    if ((b = (pthread_barrier_t)calloc(1,sizeof(*b))) == NULL)
++    if (!(b = (pthread_barrier_t)calloc(1,sizeof(*b))))
+        return ENOMEM;
+     if (!attr || *((int **)attr) == NULL)
+       b->share = PTHREAD_PROCESS_PRIVATE;
+@@ -193,7 +185,7 @@ int pthread_barrier_wait(pthread_barrier
+ 
+   b = (barrier_t *)*b_;
+ 
+-  if ((r = pthread_mutex_lock(&b->m)) != 0) return  barrier_unref(b_,EINVAL);
++  if ((r = pthread_mutex_lock(&b->m))) return  barrier_unref(b_,EINVAL);
+   sel = b->sel;
+   InterlockedDecrement((long*)&b->total);
+   if (b->total == 0)
+@@ -217,7 +209,7 @@ int pthread_barrierattr_init(void **attr
+ {
+   int *p;
+ 
+-  if ((p = (int *) calloc (1, sizeof (int))) == NULL)
++  if (!(p = (int *) calloc (1, sizeof (int))))
+     return ENOMEM;
+ 
+   *p = PTHREAD_PROCESS_PRIVATE;
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/barrier.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/barrier.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/barrier.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/barrier.h	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -28,11 +28,10 @@
+ 
+ #define _PTHREAD_BARRIER_FLAG (1<<30)
+ 
+-#define CHECK_BARRIER(b)                                                \
+-    do {                                                                \
+-        if (!(b) || ( ((barrier_t *)(*b))->valid != (unsigned int)LIFE_BARRIER ) ) \
+-            return EINVAL;                                              \
+-    } while (0)
++#define CHECK_BARRIER(b)  { \
++    if (!(b) || ( ((barrier_t *)(*b))->valid != (unsigned int)LIFE_BARRIER ) ) return EINVAL; }
++
++#include "../include/semaphore.h"
+ 
+ typedef struct barrier_t barrier_t;
+ struct barrier_t
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/clock.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/clock.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/clock.c	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/clock.c	2025-10-08 11:50:32.494789831 +0300
+@@ -4,24 +4,15 @@
+  * No warranty is given; refer to the file DISCLAIMER.PD within this package.
+  */
+ 
+-#ifdef HAVE_CONFIG_H
+-#include "config.h"
+-#endif
+-
+-#include <assert.h>
+ #include <errno.h>
+ #include <stdint.h>
+ #include <time.h>
+-
+-#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+-
+-#define WINPTHREAD_CLOCK_DECL WINPTHREAD_API
+-
+-/* public header files */
++#ifndef IN_WINPTHREAD
++#define IN_WINPTHREAD 1
++#endif
++#include "pthread.h"
+ #include "pthread_time.h"
+-/* internal header files */
+-#include "misc.h"
+ 
+ #define POW10_7                 10000000
+ #define POW10_9                 1000000000
+@@ -59,15 +50,9 @@ static WINPTHREADS_INLINE int lc_set_err
+  *         If the function fails, the return value is -1,
+  *         with errno set to indicate the error.
+  */
+-static int __clock_getres(clockid_t clock_id, struct _timespec64 *res)
++int clock_getres(clockid_t clock_id, struct timespec *res)
+ {
+-    clockid_t id = clock_id;
+-
+-    if (id == CLOCK_REALTIME && _pthread_get_system_time_best_as_file_time == GetSystemTimeAsFileTime)
+-        id = CLOCK_REALTIME_COARSE; /* GetSystemTimePreciseAsFileTime() not available */
+-
+-    switch(id) {
+-    case CLOCK_REALTIME:
++    switch(clock_id) {
+     case CLOCK_MONOTONIC:
+         {
+             LARGE_INTEGER pf;
+@@ -83,7 +68,7 @@ static int __clock_getres(clockid_t cloc
+             return 0;
+         }
+ 
+-    case CLOCK_REALTIME_COARSE:
++    case CLOCK_REALTIME:
+     case CLOCK_PROCESS_CPUTIME_ID:
+     case CLOCK_THREAD_CPUTIME_ID:
+         {
+@@ -121,7 +106,7 @@ static int __clock_getres(clockid_t cloc
+  *         If the function fails, the return value is -1,
+  *         with errno set to indicate the error.
+  */
+-static int __clock_gettime(clockid_t clock_id, struct _timespec64 *tp)
++int clock_gettime(clockid_t clock_id, struct timespec *tp)
+ {
+     unsigned __int64 t;
+     LARGE_INTEGER pf, pc;
+@@ -133,16 +118,6 @@ static int __clock_gettime(clockid_t clo
+     switch(clock_id) {
+     case CLOCK_REALTIME:
+         {
+-            _pthread_get_system_time_best_as_file_time(&ct.ft);
+-            t = ct.u64 - DELTA_EPOCH_IN_100NS;
+-            tp->tv_sec = t / POW10_7;
+-            tp->tv_nsec = ((int) (t % POW10_7)) * 100;
+-
+-            return 0;
+-        }
+-
+-    case CLOCK_REALTIME_COARSE:
+-        {
+             GetSystemTimeAsFileTime(&ct.ft);
+             t = ct.u64 - DELTA_EPOCH_IN_100NS;
+             tp->tv_sec = t / POW10_7;
+@@ -180,7 +155,7 @@ static int __clock_gettime(clockid_t clo
+         return 0;
+         }
+ 
+-    case CLOCK_THREAD_CPUTIME_ID:
++    case CLOCK_THREAD_CPUTIME_ID: 
+         {
+             if(0 == GetThreadTimes(GetCurrentThread(), &ct.ft, &et.ft, &kt.ft, &ut.ft))
+                 return lc_set_errno(EINVAL);
+@@ -209,20 +184,20 @@ static int __clock_gettime(clockid_t clo
+  *         If the function fails, the return value is -1,
+  *         with errno set to indicate the error.
+  */
+-static int __clock_nanosleep(clockid_t clock_id, int flags,
+-                           const struct _timespec64 *request,
+-                           struct _timespec64 *remain)
++int clock_nanosleep(clockid_t clock_id, int flags,
++                           const struct timespec *request,
++                           struct timespec *remain)
+ {
+-    struct _timespec64 tp;
++    struct timespec tp;
+ 
+     if (clock_id != CLOCK_REALTIME)
+         return lc_set_errno(EINVAL);
+ 
+     if (flags == 0)
+-        return nanosleep64(request, remain);
++        return nanosleep(request, remain);
+ 
+     /* TIMER_ABSTIME = 1 */
+-    __clock_gettime(CLOCK_REALTIME, &tp);
++    clock_gettime(CLOCK_REALTIME, &tp);
+ 
+     tp.tv_sec = request->tv_sec - tp.tv_sec;
+     tp.tv_nsec = request->tv_nsec - tp.tv_nsec;
+@@ -231,7 +206,7 @@ static int __clock_nanosleep(clockid_t c
+         tp.tv_sec --;
+     }
+ 
+-    return nanosleep64(&tp, remain);
++    return nanosleep(&tp, remain);
+ }
+ 
+ /**
+@@ -242,7 +217,7 @@ static int __clock_nanosleep(clockid_t c
+  *         If the function fails, the return value is -1,
+  *         with errno set to indicate the error.
+  */
+-static int __clock_settime(clockid_t clock_id, const struct _timespec64 *tp)
++int clock_settime(clockid_t clock_id, const struct timespec *tp)
+ {
+     SYSTEMTIME st;
+ 
+@@ -263,92 +238,3 @@ static int __clock_settime(clockid_t clo
+ 
+     return 0;
+ }
+-
+-/**
+- * Versions to use with 64-bit time_t (struct _timespec64)
+- */
+-
+-int clock_getres64 (clockid_t clock_id, struct _timespec64 *tp)
+-{
+-    return __clock_getres (clock_id, tp);
+-}
+-
+-int clock_gettime64 (clockid_t clock_id, struct _timespec64 *tp)
+-{
+-    return __clock_gettime (clock_id, tp);
+-}
+-
+-int clock_settime64 (clockid_t clock_id, const struct _timespec64 *tp)
+-{
+-    return __clock_settime (clock_id, tp);
+-}
+-
+-int clock_nanosleep64 (clockid_t clock_id, int flags,
+-                const struct _timespec64 *request, struct _timespec64 *remain)
+-{
+-    return __clock_nanosleep (clock_id, flags, request, remain);
+-}
+-
+-/**
+- * Versions to use with 32-bit time_t (struct _timespec32)
+- */
+-
+-int clock_getres32 (clockid_t clock_id, struct _timespec32 *tp)
+-{
+-    struct _timespec64 tp64 = {0};
+-
+-    if (__clock_getres (clock_id, &tp64) == -1)
+-        return -1;
+-
+-    tp->tv_sec = (__time32_t) tp64.tv_sec;
+-    tp->tv_nsec = tp64.tv_nsec;
+-
+-    return 0;
+-}
+-
+-int clock_gettime32 (clockid_t clock_id, struct _timespec32 *tp)
+-{
+-    struct _timespec64 tp64 = {0};
+-
+-    if (__clock_gettime (clock_id, &tp64) == -1)
+-        return -1;
+-
+-    if (tp64.tv_sec > INT_MAX)
+-    {
+-        _set_errno (EOVERFLOW);
+-        return -1;
+-    }
+-
+-    tp->tv_sec = (__time32_t) tp64.tv_sec;
+-    tp->tv_nsec = tp64.tv_nsec;
+-
+-    return 0;
+-}
+-
+-int clock_settime32 (clockid_t clock_id, const struct _timespec32 *tp)
+-{
+-    struct _timespec64 tp64 = {.tv_sec = tp->tv_sec, .tv_nsec = tp->tv_nsec};
+-    return __clock_settime (clock_id, &tp64);
+-}
+-
+-int clock_nanosleep32 (clockid_t clock_id, int flags,
+-                const struct _timespec32 *request, struct _timespec32 *remain)
+-{
+-    struct _timespec64 request64 = {
+-        .tv_sec = request->tv_sec,
+-        .tv_nsec = request->tv_nsec
+-    };
+-    struct _timespec64 remain64 = {0};
+-
+-    if (__clock_nanosleep (clock_id, flags, &request64, &remain64) == -1)
+-        return -1;
+-
+-    assert (remain64.tv_sec <= INT_MAX);
+-
+-    if (remain != NULL) {
+-        remain->tv_sec = (__time32_t)remain64.tv_sec;
+-        remain->tv_nsec = remain64.tv_nsec;
+-    }
+-
+-    return 0;
+-}
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/cond.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/cond.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/cond.c	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/cond.c	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -24,27 +24,18 @@
+  * Posix Condition Variables for Microsoft Windows.
+  * 22-9-2010 Partly based on the ACE framework implementation.
+  */
+-
+-#ifdef HAVE_CONFIG_H
+-#include "config.h"
+-#endif
+-
+-#include <malloc.h>
++#include <windows.h>
+ #include <stdio.h>
++#include <malloc.h>
+ #include <time.h>
+-
+-#define WIN32_LEAN_AND_MEAN
+-#include <windows.h>
+-
+-#define WINPTHREAD_COND_DECL WINPTHREAD_API
+-
+-/* public header files */
+ #include "pthread.h"
+ #include "pthread_time.h"
+-/* internal header files */
++#include "ref.h"
+ #include "cond.h"
+-#include "misc.h"
++#include "mutex.h"
+ #include "thread.h"
++#include "misc.h"
++#include "winpthread_internal.h"
+ 
+ #include "pthread_compat.h"
+ 
+@@ -62,13 +53,41 @@ typedef struct sCondWaitHelper {
+ 
+ int do_sema_b_wait_intern (HANDLE sema, int nointerrupt, DWORD timeout);
+ 
++#ifdef WINPTHREAD_DBG
++static int print_state = 0;
++static FILE *fo;
++void cond_print_set(int state, FILE *f)
++{
++    if (f) fo = f;
++    if (!fo) fo = stdout;
++    print_state = state;
++}
++
++void cond_print(volatile pthread_cond_t *c, char *txt)
++{
++    if (!print_state) return;
++    cond_t *c_ = (cond_t *)*c;
++    if (c_ == NULL) {
++        fprintf(fo,"C%p %d %s\n",*c,(int)GetCurrentThreadId(),txt);
++    } else {
++        fprintf(fo,"C%p %d V=%0X w=%ld %s\n",
++            *c, 
++            (int)GetCurrentThreadId(), 
++            (int)c_->valid, 
++            c_->waiters_count_,
++            txt
++            );
++    }
++}
++#endif
++
+ static pthread_spinlock_t cond_locked = PTHREAD_SPINLOCK_INITIALIZER;
+ 
+ static int
+ cond_static_init (pthread_cond_t *c)
+ {
+   int r = 0;
+-
++  
+   pthread_spin_lock (&cond_locked);
+   if (c == NULL)
+     r = EINVAL;
+@@ -126,6 +145,40 @@ pthread_condattr_setclock(pthread_condat
+ }
+ 
+ int
++__pthread_clock_nanosleep (clockid_t clock_id, int flags, const struct timespec *rqtp,
++			   struct timespec *rmtp)
++{
++  unsigned long long tick, tick2;
++  unsigned long long delay;
++  DWORD dw;
++
++  if (clock_id != CLOCK_REALTIME
++      && clock_id != CLOCK_MONOTONIC
++      && clock_id != CLOCK_PROCESS_CPUTIME_ID)
++   return EINVAL;
++  if ((flags & TIMER_ABSTIME) != 0)
++    delay = _pthread_rel_time_in_ms (rqtp);
++  else
++    delay = _pthread_time_in_ms_from_timespec (rqtp);
++  do
++    {
++      dw = (DWORD) (delay >= 99999ULL ? 99999ULL : delay);
++      tick = _pthread_time_in_ms ();
++      pthread_delay_np_ms (dw);
++      tick2 = _pthread_time_in_ms ();
++      tick2 -= tick;
++      if (tick2 >= delay)
++        delay = 0;
++      else
++        delay -= tick2;
++    }
++  while (delay != 0ULL);
++  if (rmtp)
++    memset (rmtp, 0, sizeof (*rmtp));
++  return 0;
++}
++
++int
+ pthread_condattr_setpshared (pthread_condattr_t *a, int s)
+ {
+   if (!a || (s != PTHREAD_PROCESS_SHARED && s != PTHREAD_PROCESS_PRIVATE))
+@@ -139,6 +192,43 @@ pthread_condattr_setpshared (pthread_con
+   return 0;
+ }
+ 
++static HANDLE CreateSemaphoreWin()
++{
++	HANDLE h = CreateSemaphoreA(NULL, /* no security */
++      0,          /* initially 0 */
++      SEM_VALUE_MAX, /* max count */
++      NULL);      /* unnamed  */
++
++#if 0
++	FILE *f;
++ 	
++	f = fopen("cond.log", "ab");
++ 	if(f)
++ 	{
++ 		fprintf(f, "CreateSemaphoreA: 0x%p\r\n", h);
++ 		fclose(f);
++ 	}
++#endif
++ 	
++ 	return h;
++}
++
++static void DestroySemaphoreWin(HANDLE sem)
++{
++#if 0
++	FILE *f;
++ 	
++	f = fopen("cond.log", "ab");
++ 	if(f)
++ 	{
++ 		fprintf(f, "CloseHandle: 0x%p\r\n", sem);
++ 		fclose(f);
++ 	}
++#endif
++
++	CloseHandle(sem);
++}
++
+ int
+ pthread_cond_init (pthread_cond_t *c, const pthread_condattr_t *a)
+ {
+@@ -150,23 +240,26 @@ pthread_cond_init (pthread_cond_t *c, co
+   if (a && *a == PTHREAD_PROCESS_SHARED)
+     return ENOSYS;
+ 
+-  if ((_c = calloc(1, sizeof(*_c))) == NULL)
+-    return ENOMEM;
+-
++  if ( !(_c = (pthread_cond_t)calloc(1,sizeof(*_c))) ) {
++      return ENOMEM; 
++  }
+   _c->valid  = DEAD_COND;
+   _c->busy = 0;
+   _c->waiters_count_ = 0;
+   _c->waiters_count_gone_ = 0;
+   _c->waiters_count_unblock_ = 0;
+ 
+-  _c->sema_q = CreateSemaphore (NULL,       /* no security */
+-      0,          /* initially 0 */
+-      0x7fffffff, /* max count */
+-      NULL);      /* unnamed  */
+-  _c->sema_b =  CreateSemaphore (NULL,       /* no security */
+-      0,          /* initially 0 */
+-      0x7fffffff, /* max count */
+-      NULL);
++  //_c->sema_q = CreateSemaphore (NULL,       /* no security */
++  //    0,          /* initially 0 */
++  //    SEM_VALUE_MAX, /* max count */
++  //    NULL);      /* unnamed  */
++  //_c->sema_b =  CreateSemaphore (NULL,       /* no security */
++  //    0,          /* initially 0 */
++  //    SEM_VALUE_MAX, /* max count */
++  //    NULL);  
++  _c->sema_q = CreateSemaphoreWin();
++  _c->sema_b = CreateSemaphoreWin();
++  
+   if (_c->sema_q == NULL || _c->sema_b == NULL) {
+       if (_c->sema_q != NULL)
+ 	CloseHandle (_c->sema_q);
+@@ -184,10 +277,10 @@ pthread_cond_init (pthread_cond_t *c, co
+   if (!r)
+     {
+       _c->valid = LIFE_COND;
+-      *c = (pthread_cond_t)_c;
++      *c = _c;
+     }
+   else
+-    *c = (pthread_cond_t)NULL;
++    *c = NULL;
+   return r;
+ }
+ 
+@@ -199,27 +292,36 @@ pthread_cond_destroy (pthread_cond_t *c)
+   if (!c || !*c)
+     return EINVAL;
+   if (*c == PTHREAD_COND_INITIALIZER)
++  {
++    pthread_spin_lock (&cond_locked);
++    if (*c == PTHREAD_COND_INITIALIZER)
+     {
+-      pthread_spin_lock (&cond_locked);
+-      if (*c == PTHREAD_COND_INITIALIZER)
+-      {
+-	*c = (pthread_cond_t)NULL;
+-	r = 0;
+-      }
+-      else
+-	r = EBUSY;
+-      pthread_spin_unlock (&cond_locked);
+-      return r;
++      *c = NULL;
++      r = 0;
+     }
++    else r = EBUSY;
++    
++    pthread_spin_unlock (&cond_locked);
++    return r;
++  }
+   _c = (cond_t *) *c;
+   r = do_sema_b_wait(_c->sema_b, 0, INFINITE,&_c->waiters_b_lock_,&_c->value_b);
+   if (r != 0)
+     return r;
++  /*
+   if (!TryEnterCriticalSection (&_c->waiters_count_lock_))
+     {
+        do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
+        return EBUSY;
++    }*/
++  //EnterCriticalSection (&_c->waiters_count_lock_);
++  //do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
++  if (!TryEnterCriticalSection9x (&_c->waiters_count_lock_))
++    {
++       do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
++       return EBUSY;
+     }
++    
+   if (_c->waiters_count_ > _c->waiters_count_gone_)
+     {
+       r = do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
+@@ -227,13 +329,16 @@ pthread_cond_destroy (pthread_cond_t *c)
+       LeaveCriticalSection(&_c->waiters_count_lock_);
+       return r;
+     }
+-  *c = (pthread_cond_t)NULL;
++  *c = NULL;
+   do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
+ 
+-  if (!CloseHandle (_c->sema_q) && !r)
++  /*if (!CloseHandle (_c->sema_q) && !r)
+     r = EINVAL;
+   if (!CloseHandle (_c->sema_b) && !r)
+-    r = EINVAL;
++    r = EINVAL;*/
++  DestroySemaphoreWin(_c->sema_q);
++  DestroySemaphoreWin(_c->sema_b);
++    
+   LeaveCriticalSection (&_c->waiters_count_lock_);
+   DeleteCriticalSection(&_c->waiters_count_lock_);
+   DeleteCriticalSection(&_c->waiters_b_lock_);
+@@ -304,7 +409,7 @@ pthread_cond_broadcast (pthread_cond_t *
+ {
+   cond_t *_c;
+   int r;
+-  int relCnt = 0;
++  int relCnt = 0;    
+ 
+   if (!c || !*c)
+     return EINVAL;
+@@ -367,7 +472,7 @@ pthread_cond_wait (pthread_cond_t *c, pt
+ 
+   /* pthread_testcancel(); */
+ 
+-  if (!c || *c == (pthread_cond_t)NULL)
++  if (!c || *c == NULL)
+     return EINVAL;
+   _c = (cond_t *)*c;
+   if (*c == PTHREAD_COND_INITIALIZER)
+@@ -379,20 +484,10 @@ pthread_cond_wait (pthread_cond_t *c, pt
+   } else if (_c->valid != (unsigned int)LIFE_COND)
+     return EINVAL;
+ 
+-tryagain:
+   r = do_sema_b_wait (_c->sema_b, 0, INFINITE,&_c->waiters_b_lock_,&_c->value_b);
+   if (r != 0)
+     return r;
+-
+-  if (!TryEnterCriticalSection (&_c->waiters_count_lock_))
+-  {
+-    r = do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
+-    if (r != 0)
+-      return r;
+-    sched_yield();
+-    goto tryagain;
+-  }
+-
++  EnterCriticalSection (&_c->waiters_count_lock_);
+   _c->waiters_count_++;
+   LeaveCriticalSection(&_c->waiters_count_lock_);
+   r = do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
+@@ -413,7 +508,7 @@ tryagain:
+ }
+ 
+ static int
+-pthread_cond_timedwait_impl (pthread_cond_t *c, pthread_mutex_t *external_mutex, const struct _timespec64 *t, int rel)
++pthread_cond_timedwait_impl (pthread_cond_t *c, pthread_mutex_t *external_mutex, const struct timespec *t, int rel)
+ {
+   sCondWaitHelper ch;
+   DWORD dwr;
+@@ -443,22 +538,10 @@ pthread_cond_timedwait_impl (pthread_con
+     dwr = dwMilliSecs(_pthread_time_in_ms_from_timespec(t));
+   }
+ 
+-tryagain:
+   r = do_sema_b_wait (_c->sema_b, 0, INFINITE,&_c->waiters_b_lock_,&_c->value_b);
+   if (r != 0)
+     return r;
+-
+-  if (!TryEnterCriticalSection (&_c->waiters_count_lock_))
+-  {
+-    r = do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
+-    if (r != 0)
+-      return r;
+-    sched_yield();
+-    goto tryagain;
+-  }
+-
+   _c->waiters_count_++;
+-  LeaveCriticalSection(&_c->waiters_count_lock_);
+   r = do_sema_b_release (_c->sema_b, 1,&_c->waiters_b_lock_,&_c->value_b);
+   if (r != 0)
+     return r;
+@@ -479,31 +562,17 @@ tryagain:
+ }
+ 
+ int
+-pthread_cond_timedwait64(pthread_cond_t *c, pthread_mutex_t *m, const struct _timespec64 *t)
++pthread_cond_timedwait(pthread_cond_t *c, pthread_mutex_t *m, const struct timespec *t)
+ {
+   return pthread_cond_timedwait_impl(c, m, t, 0);
+ }
+ 
+ int
+-pthread_cond_timedwait32(pthread_cond_t *c, pthread_mutex_t *m, const struct _timespec32 *t)
+-{
+-  struct _timespec64 t64 = {.tv_sec = t->tv_sec, .tv_nsec = t->tv_nsec};
+-  return pthread_cond_timedwait_impl(c, m, &t64, 0);
+-}
+-
+-int
+-pthread_cond_timedwait64_relative_np(pthread_cond_t *c, pthread_mutex_t *m, const struct _timespec64 *t)
++pthread_cond_timedwait_relative_np(pthread_cond_t *c, pthread_mutex_t *m, const struct timespec *t)
+ {
+   return pthread_cond_timedwait_impl(c, m, t, 1);
+ }
+ 
+-int
+-pthread_cond_timedwait32_relative_np(pthread_cond_t *c, pthread_mutex_t *m, const struct _timespec32 *t)
+-{
+-  struct _timespec64 t64 = {.tv_sec = t->tv_sec, .tv_nsec = t->tv_nsec};
+-  return pthread_cond_timedwait_impl(c, m, &t64, 1);
+-}
+-
+ static void
+ cleanup_wait (void *arg)
+ {
+@@ -582,7 +651,7 @@ do_sema_b_wait_intern (HANDLE sema, int
+   DWORD res, dt;
+   if (nointerrupt == 1)
+   {
+-    res = _pthread_wait_for_single_object(sema, timeout);
++    res = WaitForSingleObject(sema, timeout);
+     switch (res) {
+     case WAIT_TIMEOUT:
+ 	r = ETIMEDOUT;
+@@ -606,7 +675,7 @@ do_sema_b_wait_intern (HANDLE sema, int
+   if (maxH == 2)
+   {
+ redo:
+-      res = _pthread_wait_for_multiple_objects(maxH, arr, 0, timeout);
++      res = WaitForMultipleObjects(maxH, arr, 0, timeout);
+       switch (res) {
+       case WAIT_TIMEOUT:
+ 	  r = ETIMEDOUT;
+@@ -639,7 +708,7 @@ redo:
+   if (timeout == INFINITE)
+   {
+     do {
+-      res = _pthread_wait_for_single_object(sema, 40);
++      res = WaitForSingleObject(sema, 40);
+       switch (res) {
+       case WAIT_TIMEOUT:
+ 	  r = ETIMEDOUT;
+@@ -668,7 +737,7 @@ redo:
+   dt = 20;
+   do {
+     if (dt > timeout) dt = timeout;
+-    res = _pthread_wait_for_single_object(sema, dt);
++    res = WaitForSingleObject(sema, dt);
+     switch (res) {
+     case WAIT_TIMEOUT:
+ 	r = ETIMEDOUT;
+@@ -713,5 +782,5 @@ do_sema_b_release(HANDLE sema, LONG coun
+   }
+   InterlockedExchangeAdd(val, -count);
+   LeaveCriticalSection(cs);
+-  return EINVAL;
++  return EINVAL;  
+ }
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/cond.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/cond.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/cond.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/cond.h	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -23,12 +23,12 @@
+ #ifndef WIN_PTHREADS_COND_H
+ #define WIN_PTHREADS_COND_H
+ 
+-#define CHECK_COND(c)                                                   \
+-    do {                                                                \
+-        if (!(c) || !*c || (*c == PTHREAD_COND_INITIALIZER)             \
+-            || ( ((cond_t *)(*c))->valid != (unsigned int)LIFE_COND ) ) \
+-            return EINVAL;                                              \
+-    } while (0)
++#include <windows.h>
++
++#define CHECK_COND(c)  { \
++    if (!(c) || !*c || (*c == PTHREAD_COND_INITIALIZER) \
++        || ( ((cond_t *)(*c))->valid != (unsigned int)LIFE_COND ) ) \
++        return EINVAL; }
+ 
+ #define LIFE_COND 0xC0BAB1FD
+ #define DEAD_COND 0xC0DEADBF
+@@ -38,7 +38,7 @@
+ typedef struct cond_t cond_t;
+ struct cond_t
+ {
+-    unsigned int valid;
++    unsigned int valid;   
+     int busy;
+     LONG waiters_count_; /* Number of waiting threads.  */
+     LONG waiters_count_unblock_; /* Number of waiting threads whitch can be unblocked.  */
+@@ -54,4 +54,8 @@ struct cond_t
+                  became signaled.  */
+ };
+ 
++void cond_print_set(int state, FILE *f);
++
++void cond_print(volatile pthread_cond_t *c, char *txt);
++
+ #endif
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/misc.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/misc.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/misc.c	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/misc.c	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -20,72 +20,10 @@
+    DEALINGS IN THE SOFTWARE.
+ */
+ 
+-#ifdef HAVE_CONFIG_H
+-#include "config.h"
+-#endif
+-
+-#define WIN32_LEAN_AND_MEAN
+-#include <windows.h>
+-
+-/* public header files */
+ #include "pthread.h"
+-/* internal header files */
++#include "windows.h"
+ #include "misc.h"
+ 
+-void (WINAPI *_pthread_get_system_time_best_as_file_time) (LPFILETIME) = NULL;
+-static ULONGLONG (WINAPI *_pthread_get_tick_count_64) (VOID);
+-HRESULT (WINAPI *_pthread_set_thread_description) (HANDLE, PCWSTR) = NULL;
+-
+-#if defined(__GNUC__) || defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wprio-ctor-dtor"
+-__attribute__((constructor(0)))
+-#endif
+-static void winpthreads_init(void)
+-{
+-    HMODULE mod = GetModuleHandleA("kernel32.dll");
+-    if (mod)
+-    {
+-        _pthread_get_tick_count_64 =
+-            (ULONGLONG (WINAPI *)(VOID))(void*) GetProcAddress(mod, "GetTickCount64");
+-
+-        /* <1us precision on Windows 10 */
+-        _pthread_get_system_time_best_as_file_time =
+-            (void (WINAPI *)(LPFILETIME))(void*) GetProcAddress(mod, "GetSystemTimePreciseAsFileTime");
+-    }
+-
+-    if (!_pthread_get_system_time_best_as_file_time)
+-        /* >15ms precision on Windows 10 */
+-        _pthread_get_system_time_best_as_file_time = GetSystemTimeAsFileTime;
+-
+-    mod = GetModuleHandleA("kernelbase.dll");
+-    if (mod)
+-    {
+-        _pthread_set_thread_description =
+-            (HRESULT (WINAPI *)(HANDLE, PCWSTR))(void*) GetProcAddress(mod, "SetThreadDescription");
+-    }
+-}
+-#if defined(__GNUC__) || defined(__clang__)
+-#pragma GCC diagnostic pop
+-#endif
+-
+-#if defined(_MSC_VER) && !defined(__clang__)
+-/* Force a reference to __xc_t to prevent whole program optimization
+- * from discarding the variable. */
+-
+-/* On x86, symbols are prefixed with an underscore. */
+-# if defined(_M_IX86)
+-#   pragma comment(linker, "/include:___xc_t")
+-# else
+-#   pragma comment(linker, "/include:__xc_t")
+-# endif
+-
+-#pragma section(".CRT$XCT", long, read)
+-__declspec(allocate(".CRT$XCT"))
+-extern const _PVFV __xc_t;
+-const _PVFV __xc_t = winpthreads_init;
+-#endif
+-
+ unsigned long long _pthread_time_in_ms(void)
+ {
+     FILETIME ft;
+@@ -95,16 +33,15 @@ unsigned long long _pthread_time_in_ms(v
+             - 0x19DB1DED53E8000ULL) / 10000ULL;
+ }
+ 
+-unsigned long long _pthread_time_in_ms_from_timespec(const struct _timespec64 *ts)
++unsigned long long _pthread_time_in_ms_from_timespec(const struct timespec *ts)
+ {
+     unsigned long long t = (unsigned long long) ts->tv_sec * 1000LL;
+-    /* The +999999 is here to ensure that the division always rounds up */
+-    t += (unsigned long long) (ts->tv_nsec + 999999) / 1000000;
++    t += (unsigned long long) (ts->tv_nsec / 1000000);
+ 
+     return t;
+ }
+ 
+-unsigned long long _pthread_rel_time_in_ms(const struct _timespec64 *ts)
++unsigned long long _pthread_rel_time_in_ms(const struct timespec *ts)
+ {
+     unsigned long long t1 = _pthread_time_in_ms_from_timespec(ts);
+     unsigned long long t2 = _pthread_time_in_ms();
+@@ -114,105 +51,3 @@ unsigned long long _pthread_rel_time_in_
+     return t1 - t2;
+ }
+ 
+-static unsigned long long
+-_pthread_get_tick_count (long long *frequency)
+-{
+-  if (_pthread_get_tick_count_64 != NULL)
+-    return _pthread_get_tick_count_64 ();
+-
+-  LARGE_INTEGER freq, timestamp;
+-
+-  if (*frequency == 0)
+-  {
+-    if (QueryPerformanceFrequency (&freq))
+-      *frequency = freq.QuadPart;
+-    else
+-      *frequency = -1;
+-  }
+-
+-  if (*frequency > 0 && QueryPerformanceCounter (&timestamp))
+-    return timestamp.QuadPart / (*frequency / 1000);
+-
+-  /* Fallback */
+-  return GetTickCount ();
+-}
+-
+-/* A wrapper around WaitForSingleObject() that ensures that
+- * the wait function does not time out before the time
+- * actually runs out. This is needed because WaitForSingleObject()
+- * might have poor accuracy, returning earlier than expected.
+- * On the other hand, returning a bit *later* than expected
+- * is acceptable in a preemptive multitasking environment.
+- */
+-unsigned long
+-_pthread_wait_for_single_object (void *handle, unsigned long timeout)
+-{
+-  DWORD result;
+-  unsigned long long start_time, end_time;
+-  unsigned long wait_time;
+-  long long frequency = 0;
+-
+-  if (timeout == INFINITE || timeout == 0)
+-    return WaitForSingleObject ((HANDLE) handle, (DWORD) timeout);
+-
+-  start_time = _pthread_get_tick_count (&frequency);
+-  end_time = start_time + timeout;
+-  wait_time = timeout;
+-
+-  do
+-  {
+-    unsigned long long current_time;
+-
+-    result = WaitForSingleObject ((HANDLE) handle, (DWORD) wait_time);
+-    if (result != WAIT_TIMEOUT)
+-      break;
+-
+-    current_time = _pthread_get_tick_count (&frequency);
+-    if (current_time >= end_time)
+-      break;
+-
+-    wait_time = (DWORD) (end_time - current_time);
+-  } while (TRUE);
+-
+-  return result;
+-}
+-
+-/* A wrapper around WaitForMultipleObjects() that ensures that
+- * the wait function does not time out before the time
+- * actually runs out. This is needed because WaitForMultipleObjects()
+- * might have poor accuracy, returning earlier than expected.
+- * On the other hand, returning a bit *later* than expected
+- * is acceptable in a preemptive multitasking environment.
+- */
+-unsigned long
+-_pthread_wait_for_multiple_objects (unsigned long count, void **handles, unsigned int all, unsigned long timeout)
+-{
+-  DWORD result;
+-  unsigned long long start_time, end_time;
+-  unsigned long wait_time;
+-  long long frequency = 0;
+-
+-  if (timeout == INFINITE || timeout == 0)
+-    return WaitForMultipleObjects ((DWORD) count, (HANDLE *) handles, all, (DWORD) timeout);
+-
+-  start_time = _pthread_get_tick_count (&frequency);
+-  end_time = start_time + timeout;
+-  wait_time = timeout;
+-
+-  do
+-  {
+-    unsigned long long current_time;
+-
+-    result = WaitForMultipleObjects ((DWORD) count, (HANDLE *) handles, all, (DWORD) wait_time);
+-    if (result != WAIT_TIMEOUT)
+-      break;
+-
+-    current_time = _pthread_get_tick_count (&frequency);
+-    if (current_time >= end_time)
+-      break;
+-
+-    wait_time = (DWORD) (end_time - current_time);
+-  } while (TRUE);
+-
+-  return result;
+-}
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/misc.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/misc.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/misc.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/misc.h	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -23,10 +23,37 @@
+ #ifndef WIN_PTHREADS_MISC_H
+ #define WIN_PTHREADS_MISC_H
+ 
+-#include <limits.h>
+-/* public header files */
+ #include "pthread_compat.h"
+ 
++#ifndef assert
++
++#ifndef ASSERT_TRACE
++# define ASSERT_TRACE 0
++#else
++# undef ASSERT_TRACE
++# define ASSERT_TRACE 0
++#endif
++
++# define assert(e) \
++   ((e) ? ((ASSERT_TRACE) ? fprintf(stderr, \
++                                    "Assertion succeeded: (%s), file %s, line %d\n", \
++                        #e, __FILE__, (int) __LINE__), \
++                                fflush(stderr) : \
++                             0) : \
++          (fprintf(stderr, "Assertion failed: (%s), file %s, line %d\n", \
++                   #e, __FILE__, (int) __LINE__), exit(1), 0))
++
++# define fixme(e) \
++   ((e) ? ((ASSERT_TRACE) ? fprintf(stderr, \
++                                    "Assertion succeeded: (%s), file %s, line %d\n", \
++                        #e, __FILE__, (int) __LINE__), \
++                                fflush(stderr) : \
++                             0) : \
++          (fprintf(stderr, "FIXME: (%s), file %s, line %d\n", \
++                   #e, __FILE__, (int) __LINE__), 0, 0))
++
++#endif
++
+ #define PTR2INT(x)	((int)(uintptr_t)(x))
+ 
+ #if SIZE_MAX>UINT_MAX
+@@ -35,35 +62,22 @@ typedef long long LONGBAG;
+ typedef long LONGBAG;
+ #endif
+ 
+-#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+-#undef GetHandleInformation
+-#define GetHandleInformation(h,f)  (1)
+-#endif
+-
+-#define CHECK_HANDLE(h)                                                 \
+-  do {                                                                  \
+-    DWORD dwFlags;                                                      \
++#define CHECK_HANDLE(h) { DWORD dwFlags; \
+     if (!(h) || ((h) == INVALID_HANDLE_VALUE) || !GetHandleInformation((h), &dwFlags)) \
+-      return EINVAL;                                                    \
+-  } while (0)
++    return EINVAL; }
++
++#define CHECK_PTR(p)    if (!(p)) return EINVAL;
+ 
+-#define CHECK_PTR(p) do { if (!(p)) return EINVAL; } while (0)
++#define UPD_RESULT(x,r)    { int _r=(x); r = r ? r : _r; }
+ 
+-#define UPD_RESULT(x,r) do { int _r = (x); (r) = (r) ? (r) : _r; } while (0)
++#define CHECK_THREAD(t)  { \
++    CHECK_PTR(t); \
++    CHECK_HANDLE(t->h); }
+ 
+-#define CHECK_THREAD(t)                         \
+-  do {                                          \
+-    CHECK_PTR(t);                               \
+-    CHECK_HANDLE((t)->h);                       \
+-  } while (0)
+-
+-#define CHECK_OBJECT(o, e)                                              \
+-  do {                                                                  \
+-    DWORD dwFlags;                                                      \
+-    if (!(o)) return e;                                                 \
+-    if (!((o)->h) || (((o)->h) == INVALID_HANDLE_VALUE) || !GetHandleInformation(((o)->h), &dwFlags)) \
+-      return e;                                                         \
+-  } while (0)
++#define CHECK_OBJECT(o, e)  { DWORD dwFlags; \
++    if (!(o)) return e; \
++    if (!((o)->h) || (((o)->h) == INVALID_HANDLE_VALUE) || !GetHandleInformation(((o)->h), &dwFlags)){ \
++        (void)dwFlags; return e; } }
+ 
+ #define VALID(x)    if (!(p)) return EINVAL;
+ 
+@@ -74,27 +88,20 @@ static WINPTHREADS_INLINE unsigned long
+   return (unsigned long) ms;
+ }
+ 
+-unsigned long long _pthread_time_in_ms(void);
+-unsigned long long _pthread_time_in_ms_from_timespec(const struct _timespec64 *ts);
+-unsigned long long _pthread_rel_time_in_ms(const struct _timespec64 *ts);
+-unsigned long _pthread_wait_for_single_object (void *handle, unsigned long timeout);
+-unsigned long _pthread_wait_for_multiple_objects (unsigned long count, void **handles, unsigned int all, unsigned long timeout);
+-
+-extern void (WINAPI *_pthread_get_system_time_best_as_file_time) (LPFILETIME);
+-extern HRESULT (WINAPI *_pthread_set_thread_description) (HANDLE, PCWSTR);
+-
+-#if defined(__GNUC__) || defined(__clang__)
+-#define likely(cond) __builtin_expect((cond) != 0, 1)
+-#define unlikely(cond) __builtin_expect((cond) != 0, 0)
+-#else
+-#define likely(cond) (cond)
+-#define unlikely(cond) (cond)
++#ifndef _mm_pause
++#define _mm_pause()			{__asm__ __volatile__("pause");}
+ #endif
+ 
+-#if defined(__GNUC__) || defined(__clang__)
+-#define UNREACHABLE() __builtin_unreachable()
+-#elif defined(_MSC_VER)
+-#define UNREACHABLE() __assume(0)
++#ifndef _ReadWriteBarrier
++#define _ReadWriteBarrier   __sync_synchronize
+ #endif
+ 
++#ifndef YieldProcessor
++#define YieldProcessor      _mm_pause
++#endif
++
++unsigned long long _pthread_time_in_ms(void);
++unsigned long long _pthread_time_in_ms_from_timespec(const struct timespec *ts);
++unsigned long long _pthread_rel_time_in_ms(const struct timespec *ts);
++
+ #endif
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/mutex.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/mutex.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/mutex.c	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/mutex.c	2025-10-08 11:50:32.494789831 +0300
+@@ -1,6 +1,5 @@
+ /*
+    Copyright (c) 2011, 2014 mingw-w64 project
+-   Copyright (c) 2015 Intel Corporation
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -21,292 +20,470 @@
+    DEALINGS IN THE SOFTWARE.
+ */
+ 
+-#ifdef HAVE_CONFIG_H
+-#include "config.h"
+-#endif
+-
+-#include <malloc.h>
+-#include <stdbool.h>
+-#include <stdio.h>
+-
+-#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+-
+-#define WINPTHREAD_MUTEX_DECL WINPTHREAD_API
+-
+-/* public header files */
++#include <winternl.h>
++#include <stdio.h>
++#include <malloc.h>
+ #include "pthread.h"
+-/* internal header files */
++#include "ref.h"
++#include "mutex.h"
+ #include "misc.h"
+ 
+-typedef enum {
+-  Unlocked,        /* Not locked. */
+-  Locked,          /* Locked but without waiters. */
+-  Waiting,         /* Locked, may have waiters. */
+-} mutex_state_t;
+-
+-typedef enum {
+-  Normal,
+-  Errorcheck,
+-  Recursive,
+-} mutex_type_t;
+-
+-/* The heap-allocated part of a mutex. */
+-typedef struct {
+-  mutex_state_t state;
+-  mutex_type_t type;
+-  HANDLE event;       /* Auto-reset event, or NULL if not yet allocated. */
+-  unsigned rec_lock;  /* For recursive mutexes, the number of times the
+-                         mutex has been locked in excess by the same thread. */
+-  volatile DWORD owner;  /* For recursive and error-checking mutexes, the
+-                            ID of the owning thread if the mutex is locked. */
+-} mutex_impl_t;
+-
+-/* Whether a mutex is still a static initializer (not a pointer to
+-   a mutex_impl_t). */
+-static bool
+-is_static_initializer(pthread_mutex_t m)
+-{
+-  /* Treat 0 as a static initializer as well (for normal mutexes),
+-     to tolerate sloppy code in libgomp. (We should rather fix that code!) */
+-  intptr_t v = (intptr_t)m;
+-  return v >= -3 && v <= 0;
+-/* Should be simple:
+-  return (uintptr_t)m >= (uintptr_t)-3; */
+-}
+-
+-/* Create and return the implementation part of a mutex from a static
+-   initialiser. Return NULL on out-of-memory error. */
+-static WINPTHREADS_ATTRIBUTE((noinline)) mutex_impl_t *
+-mutex_impl_init(pthread_mutex_t *m, mutex_impl_t *mi)
+-{
+-  mutex_impl_t *new_mi = malloc(sizeof(mutex_impl_t));
+-  if (new_mi == NULL)
+-    return NULL;
+-  new_mi->state = Unlocked;
+-  new_mi->type = (mi == (void *)PTHREAD_RECURSIVE_MUTEX_INITIALIZER ? Recursive
+-                  : mi == (void *)PTHREAD_ERRORCHECK_MUTEX_INITIALIZER ? Errorcheck
+-                  : Normal);
+-  new_mi->event = NULL;
+-  new_mi->rec_lock = 0;
+-  new_mi->owner = (DWORD)-1;
+-  if (InterlockedCompareExchangePointer((PVOID volatile *)m, new_mi, mi) == mi) {
+-    return new_mi;
+-  } else {
+-    /* Someone created the struct before us. */
+-    free(new_mi);
+-    return (mutex_impl_t *)*m;
+-  }
++extern int do_sema_b_wait_intern (HANDLE sema, int nointerrupt, DWORD timeout);
++static WINPTHREADS_ATTRIBUTE((noinline)) int mutex_static_init(pthread_mutex_t *m);
++static WINPTHREADS_ATTRIBUTE((noinline)) int _mutex_trylock(pthread_mutex_t *m);
++
++static pthread_spinlock_t mutex_global = PTHREAD_SPINLOCK_INITIALIZER;
++static pthread_spinlock_t mutex_global_static = PTHREAD_SPINLOCK_INITIALIZER;
++
++static WINPTHREADS_ATTRIBUTE((noinline)) int
++mutex_unref (pthread_mutex_t *m, int r)
++{
++  mutex_t *m_ = (mutex_t *)*m;
++  pthread_spin_lock (&mutex_global);
++#ifdef WINPTHREAD_DBG
++  assert((m_->valid == LIFE_MUTEX) && (m_->busy > 0));
++#endif
++  if (m_->valid == LIFE_MUTEX && m_->busy > 0)
++    m_->busy -= 1;
++  pthread_spin_unlock (&mutex_global);
++  return r;
+ }
+ 
+-/* Return the implementation part of a mutex, creating it if necessary.
+-   Return NULL on out-of-memory error. */
+-static inline mutex_impl_t *
+-mutex_impl(pthread_mutex_t *m)
++/* Set the mutex to busy in a thread-safe way */
++/* A busy mutex can't be destroyed */
++static WINPTHREADS_ATTRIBUTE((noinline)) int
++mutex_ref (pthread_mutex_t *m)
+ {
+-  mutex_impl_t *mi = (mutex_impl_t *)*m;
+-  if (is_static_initializer((pthread_mutex_t)mi)) {
+-    return mutex_impl_init(m, mi);
+-  } else {
+-    /* mi cannot be null here; avoid a test in the fast path. */
+-    if (mi == NULL)
+-      UNREACHABLE();
+-    return mi;
++  int r = 0;
++
++  pthread_spin_lock (&mutex_global);
++
++  if (!m || !*m)
++  {
++    pthread_spin_unlock (&mutex_global);
++    return EINVAL;
+   }
++
++  if (STATIC_INITIALIZER(*m))
++  {
++    pthread_spin_unlock (&mutex_global);
++    r = mutex_static_init (m);
++    pthread_spin_lock (&mutex_global);
++
++    if (r != 0 && r != EBUSY)
++    {
++      pthread_spin_unlock (&mutex_global);
++      return r;
++    }
++  }
++  
++  r = 0;
++  
++  if (!m || !*m || ((mutex_t *)*m)->valid != LIFE_MUTEX) 
++    r = EINVAL;
++  else
++    ((mutex_t *)*m)->busy += 1;
++
++  pthread_spin_unlock (&mutex_global);
++
++  return r;
+ }
+ 
+-/* Lock a mutex. Give up after 'timeout' ms (with ETIMEDOUT),
+-   or never if timeout=INFINITE. */
+-static inline int
+-pthread_mutex_lock_intern (pthread_mutex_t *m, DWORD timeout)
++/* An unlock can simply fail with EPERM instead of auto-init (can't be owned) */
++static WINPTHREADS_ATTRIBUTE((noinline)) int
++mutex_ref_unlock (pthread_mutex_t *m)
+ {
+-  mutex_impl_t *mi = mutex_impl(m);
+-  if (mi == NULL)
+-    return ENOMEM;
+-  mutex_state_t old_state = InterlockedExchange((long *)&mi->state, Locked);
+-  if (unlikely(old_state != Unlocked)) {
+-    /* The mutex is already locked. */
+-
+-    if (mi->type != Normal) {
+-      /* Recursive or Errorcheck */
+-      if (mi->owner == GetCurrentThreadId()) {
+-        /* FIXME: A recursive mutex should not need two atomic ops when locking
+-           recursively.  We could rewrite by doing compare-and-swap instead of
+-           test-and-set the first time, but it would lead to more code
+-           duplication and add a conditional branch to the critical path. */
+-        InterlockedCompareExchange((long *)&mi->state, old_state, Locked);
+-        if (mi->type == Recursive) {
+-          mi->rec_lock++;
+-          return 0;
+-        } else {
+-          /* type == Errorcheck */
+-          return EDEADLK;
+-        }
+-      }
+-    }
++  int r = 0;
++  mutex_t *m_ = (mutex_t *)*m;
+ 
+-    /* Make sure there is an event object on which to wait. */
+-    if (mi->event == NULL) {
+-      /* Make an auto-reset event object. */
+-      HANDLE ev = CreateEvent(NULL, false, false, NULL);
+-      if (ev == NULL) {
+-        switch (GetLastError()) {
+-        case ERROR_ACCESS_DENIED:
+-          return EPERM;
+-        default:
+-          return ENOMEM;    /* Probably accurate enough. */
+-        }
+-      }
+-      if (InterlockedCompareExchangePointer(&mi->event, ev, NULL) != NULL) {
+-        /* Someone created the event before us. */
+-        CloseHandle(ev);
+-      }
+-    }
++  pthread_spin_lock (&mutex_global);
+ 
+-    /* At this point, mi->event is non-NULL. */
++  if (!m || !*m || ((mutex_t *)*m)->valid != LIFE_MUTEX) 
++    r = EINVAL;
++  else if (STATIC_INITIALIZER(*m) || !COND_LOCKED(m_))
++    r = EPERM;
++  else
++    ((mutex_t *)*m)->busy ++;
+ 
+-    while (InterlockedExchange((long *)&mi->state, Waiting) != Unlocked) {
+-      /* For timed locking attempts, it is possible (although unlikely)
+-         that we are woken up but someone else grabs the lock before us,
+-         and we have to go back to sleep again. In that case, the total
+-         wait may be longer than expected. */
+-
+-      unsigned r = _pthread_wait_for_single_object(mi->event, timeout);
+-      switch (r) {
+-      case WAIT_TIMEOUT:
+-        return ETIMEDOUT;
+-      case WAIT_OBJECT_0:
+-        break;
+-      default:
+-        return EINVAL;
+-      }
++  pthread_spin_unlock (&mutex_global);
++
++  return r;
++}
++
++/* doesn't lock the mutex but set it to invalid in a thread-safe way */
++/* A busy mutex can't be destroyed -> EBUSY */
++static WINPTHREADS_ATTRIBUTE((noinline)) int
++mutex_ref_destroy (pthread_mutex_t *m, pthread_mutex_t *mDestroy)
++{
++  pthread_mutex_t mx;
++  mutex_t *m_;
++  int r = 0;
++
++  if (!m || !*m)
++    return EINVAL;
++
++  *mDestroy = NULL;
++  /* also considered as busy, any concurrent access prevents destruction: */
++  mx = *m;
++  r = pthread_mutex_trylock (&mx);
++  if (r)
++    return r;
++
++  pthread_spin_lock (&mutex_global);
++
++  if (!*m)
++    r = EINVAL;
++  else
++  {
++    m_ = (mutex_t *)*m;
++    if (STATIC_INITIALIZER(*m))
++      *m = NULL;
++    else  if (m_->valid != LIFE_MUTEX)
++      r = EINVAL;
++    else if (m_->busy)
++      r = 0xbeef;
++    else
++    {
++      *mDestroy = *m;
++      *m = NULL;
+     }
+   }
+ 
+-  if (mi->type != Normal)
+-    mi->owner = GetCurrentThreadId();
++  if (r)
++    {
++      pthread_spin_unlock (&mutex_global);
++      pthread_mutex_unlock (&mx);
++    }
++  return r;
++}
+ 
+-  return 0;
++static WINPTHREADS_ATTRIBUTE((noinline)) int
++mutex_ref_init (pthread_mutex_t *m)
++{
++    int r = 0;
++
++    pthread_spin_lock (&mutex_global);
++    
++    if (!m)  r = EINVAL;
++
++    if (r) 
++      pthread_spin_unlock (&mutex_global);
++    return r;
+ }
+ 
+-int
+-pthread_mutex_lock (pthread_mutex_t *m)
++#ifdef WINPTHREAD_DBG
++static int print_state = 1;
++
++void mutex_print_set (int state)
+ {
+-  return pthread_mutex_lock_intern (m, INFINITE);
++    print_state = state;
+ }
+ 
+-/* Internal version which always uses `struct _timespec64`. */
+-static int __pthread_mutex_timedlock(pthread_mutex_t *m, const struct _timespec64 *ts)
++void mutex_print (volatile pthread_mutex_t *m, char *txt)
+ {
+-  unsigned long long patience;
+-  if (ts != NULL) {
+-    unsigned long long end = _pthread_time_in_ms_from_timespec(ts);
+-    unsigned long long now = _pthread_time_in_ms();
+-    patience = end > now ? end - now : 0;
+-    if (patience > 0xffffffff)
+-      patience = INFINITE;
++  if (!print_state) 
++    return;
++  mutex_t *m_ = (mutex_t *)*m;
++  if (m_ == NULL) {
++    printf("M%p %d %s\n",*m,(int)GetCurrentThreadId(),txt);
+   } else {
+-    patience = INFINITE;
++    printf("M%p %d V=%0X B=%d t=%d o=%d C=%d R=%d H=%p %s\n",
++            *m, 
++            (int)GetCurrentThreadId(), 
++            (int)m_->valid, 
++            (int)m_->busy,
++            m_->type,
++            (int)GET_OWNER(m_),(int)(m_->count),(int)GET_RCNT(m_),GET_HANDLE(m_),txt);
+   }
+-  return pthread_mutex_lock_intern(m, patience);
+ }
++#endif
+ 
+-int pthread_mutex_timedlock64(pthread_mutex_t *m, const struct _timespec64 *ts)
++static WINPTHREADS_ATTRIBUTE((noinline)) int
++mutex_static_init (pthread_mutex_t *m)
+ {
+-  return __pthread_mutex_timedlock (m, ts);
++  static pthread_mutexattr_t mxattr_recursive = PTHREAD_MUTEX_RECURSIVE;
++  static pthread_mutexattr_t mxattr_errorcheck = PTHREAD_MUTEX_ERRORCHECK;
++
++  int r;
++
++  pthread_spin_lock (&mutex_global_static);
++  if (!STATIC_INITIALIZER(*m))
++      /* Assume someone crept in between: */
++      r = 0;
++  else
++  {
++    if (*m == PTHREAD_MUTEX_INITIALIZER)
++      r = pthread_mutex_init (m, NULL);
++    else if (*m == PTHREAD_RECURSIVE_MUTEX_INITIALIZER)
++      r = pthread_mutex_init (m, &mxattr_recursive);
++    else if (*m == PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
++      r = pthread_mutex_init (m, &mxattr_errorcheck);
++    else if (*m == NULL)
++      r = EINVAL;
++    else
++      r = pthread_mutex_init (m, NULL);
++  }
++  
++  pthread_spin_unlock (&mutex_global_static);
++  return r;
+ }
+ 
+-int pthread_mutex_timedlock32(pthread_mutex_t *m, const struct _timespec32 *ts)
++static int pthread_mutex_lock_intern(pthread_mutex_t *m, DWORD timeout);
++
++int
++pthread_mutex_lock (pthread_mutex_t *m)
+ {
+-  struct _timespec64 ts64 = {.tv_sec = ts->tv_sec, .tv_nsec = ts->tv_nsec};
+-  return __pthread_mutex_timedlock (m, &ts64);
++  return pthread_mutex_lock_intern (m, INFINITE);
+ }
+ 
+-int pthread_mutex_unlock(pthread_mutex_t *m)
++static int
++pthread_mutex_lock_intern (pthread_mutex_t *m, DWORD timeout)
+ {
+-  /* Here m might an initialiser of an error-checking or recursive mutex, in
+-     which case the behaviour is well-defined, so we can't skip this check. */
+-  mutex_impl_t *mi = mutex_impl(m);
+-  if (mi == NULL)
+-    return ENOMEM;
+-
+-  if (unlikely(mi->type != Normal)) {
+-    if (mi->state == Unlocked)
+-      return EINVAL;
+-    if (mi->owner != GetCurrentThreadId())
+-      return EPERM;
+-    if (mi->rec_lock > 0) {
+-      mi->rec_lock--;
+-      return 0;
++  mutex_t *_m;
++  int r;
++  HANDLE h;
++
++  r = mutex_ref (m);
++  if (r)
++    return r;
++
++  _m = (mutex_t *) *m;
++  if (_m->type != PTHREAD_MUTEX_NORMAL)
++  {
++    if (COND_LOCKED(_m))
++    {
++      if (COND_OWNER(_m))
++      {
++	    if (_m->type == PTHREAD_MUTEX_RECURSIVE)
++	    {
++	      InterlockedIncrement(&_m->count);
++	      return mutex_unref(m,0);
++	    }
++
++	    return mutex_unref(m, EDEADLK);
++      }
+     }
+-    mi->owner = (DWORD)-1;
+   }
+-  if (unlikely(InterlockedExchange((long *)&mi->state, Unlocked) == Waiting)) {
+-    if (!SetEvent(mi->event))
+-      return EPERM;
++  
++  h = _m->h;
++  mutex_unref (m, 0);
++
++  r = do_sema_b_wait_intern (h, 1, timeout);
++
++  if (r != 0)
++    return r;
++
++  r = mutex_ref (m);
++  if (r)
++    return r;
++
++  _m->count = 1;
++  SET_OWNER(_m);
++
++  return mutex_unref (m, r);
++}
++
++int pthread_mutex_timedlock(pthread_mutex_t *m, const struct timespec *ts)
++{
++  unsigned long long t, ct;
++  int r;
++  mutex_t *_m;
++
++  if (!ts) 
++    return pthread_mutex_lock(m);
++    
++  r = mutex_ref(m);
++  if (r) 
++    return r;
++
++  /* Try to lock it without waiting */
++  r = _mutex_trylock (m);
++  if (r != EBUSY) 
++    return mutex_unref(m,r);
++    
++  _m = (mutex_t *)*m;
++  if (_m->type != PTHREAD_MUTEX_NORMAL && COND_LOCKED(_m) && COND_OWNER(_m))
++    return mutex_unref(m,EDEADLK);
++  
++  ct = _pthread_time_in_ms();
++  t = _pthread_time_in_ms_from_timespec(ts);
++  mutex_unref(m,r);
++  r = pthread_mutex_lock_intern(m, (ct > t ? 0 : (t - ct)));
++  return  r;
++}
++
++int pthread_mutex_unlock(pthread_mutex_t *m)
++{    
++  mutex_t *_m;
++  int r = mutex_ref_unlock(m);
++  
++  if(r) {
++    return r;
+   }
+-  return 0;
++
++  _m = (mutex_t *)*m;
++
++  if (_m->type == PTHREAD_MUTEX_NORMAL)
++  {
++    if (!COND_LOCKED(_m))
++      {
++		  return mutex_unref(m, EPERM);
++      }
++  }
++  else if (!COND_LOCKED(_m) || !COND_OWNER(_m)) {
++    return mutex_unref(m,EPERM);
++  }
++  
++  if (_m->type == PTHREAD_MUTEX_RECURSIVE)
++  {
++    if(InterlockedDecrement(&_m->count)) {
++	  return mutex_unref(m,0);
++	}
++  }
++  UNSET_OWNER(_m);
++
++  if (_m->h != NULL && !ReleaseSemaphore(_m->h, 1, NULL)) {
++  	SET_OWNER(_m);
++    /* restore our own bookkeeping */
++    return mutex_unref(m,EPERM);
++  }
++
++  return mutex_unref(m,0);
+ }
+ 
+-int pthread_mutex_trylock(pthread_mutex_t *m)
++static WINPTHREADS_ATTRIBUTE((noinline)) int
++_mutex_trylock(pthread_mutex_t *m)
+ {
+-  mutex_impl_t *mi = mutex_impl(m);
+-  if (mi == NULL)
+-    return ENOMEM;
+-
+-  if (InterlockedCompareExchange((long *)&mi->state, Locked, Unlocked) == Unlocked) {
+-    if (mi->type != Normal)
+-      mi->owner = GetCurrentThreadId();
+-    return 0;
+-  } else {
+-    if (mi->type == Recursive && mi->owner == GetCurrentThreadId()) {
+-      mi->rec_lock++;
+-      return 0;
++  int r = 0;
++  mutex_t *_m = (mutex_t *)*m;
++  
++  if (_m->type != PTHREAD_MUTEX_NORMAL)
++  {
++    if (COND_LOCKED(_m))
++    {
++      if (_m->type == PTHREAD_MUTEX_RECURSIVE && COND_OWNER(_m))
++	  {
++	    InterlockedIncrement(&_m->count);
++	    return 0;
++	  }
++	
++	  return EBUSY;
+     }
++  } else if (COND_LOCKED(_m))
+     return EBUSY;
++    
++  r = do_sema_b_wait_intern (_m->h, 1, 0);
++  
++  if (r == ETIMEDOUT) 
++    r = EBUSY;
++  else if (!r)
++  {
++    _m->count = 1;
++    SET_OWNER(_m);
+   }
++  
++  return r;
++}
++
++int pthread_mutex_trylock(pthread_mutex_t *m)
++{
++  int r = mutex_ref(m);
++  if(r) 
++    return r;
++
++  return mutex_unref(m,_mutex_trylock(m));
+ }
+ 
+ int
+ pthread_mutex_init (pthread_mutex_t *m, const pthread_mutexattr_t *a)
+ {
+-  pthread_mutex_t init = PTHREAD_MUTEX_INITIALIZER;
+-  if (a != NULL) {
+-    int pshared;
+-    if (pthread_mutexattr_getpshared(a, &pshared) == 0
+-        && pshared == PTHREAD_PROCESS_SHARED)
+-      return ENOSYS;
+-
+-    int type;
+-    if (pthread_mutexattr_gettype(a, &type) == 0) {
+-      switch (type) {
+-      case PTHREAD_MUTEX_ERRORCHECK:
+-        init = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER;
+-        break;
+-      case PTHREAD_MUTEX_RECURSIVE:
+-        init = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
+-        break;
+-      default:
+-        init = PTHREAD_MUTEX_INITIALIZER;
+-        break;
++  mutex_t *_m;
++
++  int r = mutex_ref_init (m);
++  if (r) 
++    return r;
++
++  if (!(_m = (pthread_mutex_t)calloc(1,sizeof(*_m))))
++    {
++      pthread_spin_unlock (&mutex_global);
++      return ENOMEM;
++    }
++
++  _m->type = PTHREAD_MUTEX_DEFAULT;
++  _m->count = 0;
++  _m->busy = 0;
++
++  if (a)
++  {
++    int share = PTHREAD_PROCESS_PRIVATE;
++    r = pthread_mutexattr_gettype (a, &_m->type);
++    if (!r)
++      r = pthread_mutexattr_getpshared(a, &share);
++    
++    if (!r && share == PTHREAD_PROCESS_SHARED)
++      r = ENOSYS;
++  }
++  
++  if (!r)
++  {
++    if ((_m->h = CreateSemaphore(NULL, 1, 0x7fffffff, NULL)) == NULL)
++    {
++      switch (GetLastError()) {
++        case ERROR_ACCESS_DENIED:
++          r = EPERM;
++            break;
++        default: /* We assume this, to keep it simple: */
++            r = ENOMEM;
+       }
+     }
++  } 
++  
++  if (r)
++  {
++    _m->valid = DEAD_MUTEX;
++    free(_m);
++    *m = NULL;
++    pthread_spin_unlock (&mutex_global);
++    return r;
+   }
+-  *m = init;
++
++  _m->valid = LIFE_MUTEX;
++  *m = _m;
++  pthread_spin_unlock (&mutex_global);
++
+   return 0;
+ }
+ 
+ int pthread_mutex_destroy (pthread_mutex_t *m)
+ {
+-  mutex_impl_t *mi = (mutex_impl_t *)*m;
+-  if (!is_static_initializer((pthread_mutex_t)mi)) {
+-    if (mi->event != NULL)
+-      CloseHandle(mi->event);
+-    free(mi);
+-    /* Sabotage attempts to re-use the mutex before initialising it again. */
+-    *m = (pthread_mutex_t)NULL;
++  mutex_t *_m;
++  pthread_mutex_t mDestroy;
++  int r;
++  
++  while ((r = mutex_ref_destroy (m, &mDestroy)) == 0xbeef)
++    Sleep (0);
++  if (r)
++    return r;
++
++  if (!mDestroy)
++  {
++    pthread_spin_unlock (&mutex_global);
++    return 0; /* destroyed a (still) static initialized mutex */
+   }
+ 
++  /* now the mutex is invalid, and no one can touch it */
++  _m = (mutex_t *)mDestroy;
++
++  CloseHandle (_m->h);
++  _m->valid = DEAD_MUTEX;
++  _m->type  = 0;
++  _m->count = 0;
++  _m->busy = 0;
++  free (mDestroy);
++  *m = NULL;
++  pthread_spin_unlock (&mutex_global);
++
+   return 0;
+ }
+ 
+@@ -328,9 +505,9 @@ int pthread_mutexattr_gettype(const pthr
+ {
+   if (!a || !type)
+     return EINVAL;
+-
++	
+   *type = *a & 3;
+-
++  
+   return 0;
+ }
+ 
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/mutex.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/mutex.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/mutex.h	1970-01-01 03:00:00.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/mutex.h	2025-10-08 11:50:32.494789831 +0300
+@@ -0,0 +1,60 @@
++/*
++   Copyright (c) 2011 mingw-w64 project
++
++   Permission is hereby granted, free of charge, to any person obtaining a
++   copy of this software and associated documentation files (the "Software"),
++   to deal in the Software without restriction, including without limitation
++   the rights to use, copy, modify, merge, publish, distribute, sublicense,
++   and/or sell copies of the Software, and to permit persons to whom the
++   Software is furnished to do so, subject to the following conditions:
++
++   The above copyright notice and this permission notice shall be included in
++   all copies or substantial portions of the Software.
++
++   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
++   DEALINGS IN THE SOFTWARE.
++*/
++
++#ifndef WIN_PTHREADS_MUTEX_H
++#define WIN_PTHREADS_MUTEX_H
++
++#define COND_LOCKED(m)	(m->owner != 0)
++#define COND_OWNER(m)	(m->owner == GetCurrentThreadId())
++#define COND_DEADLK(m)	COND_OWNER(m)
++#define GET_OWNER(m)	(m->owner)
++#define GET_HANDLE(m)	(m->h)
++#define GET_LOCKCNT(m)	(m->count)
++#define GET_RCNT(m)	(m->count) /* not accurate! */
++#define SET_OWNER(m)	(m->owner = GetCurrentThreadId())
++#define UNSET_OWNER(m)	{ m->owner = 0; }
++#define LOCK_UNDO(m)
++#define COND_DEADLK_NR(m)	((m->type != PTHREAD_MUTEX_RECURSIVE) && COND_DEADLK(m))
++#define CHECK_DEADLK(m)		{ if (COND_DEADLK_NR(m)) return EDEADLK; }
++
++#define STATIC_INITIALIZER(x)		((intptr_t)(x) >= -3 && (intptr_t)(x) <= -1)
++#define MUTEX_INITIALIZER2TYPE(x)	((LONGBAG)PTHREAD_NORMAL_MUTEX_INITIALIZER - (LONGBAG)(x))
++
++#define LIFE_MUTEX 0xBAB1F00D
++#define DEAD_MUTEX 0xDEADBEEF
++
++typedef struct mutex_t mutex_t;
++struct mutex_t
++{
++    LONG valid;   
++    volatile LONG busy;   
++    int type;
++    volatile LONG count;
++    LONG lockOwner;
++    DWORD owner;
++    HANDLE h;
++};
++
++void mutex_print(volatile pthread_mutex_t *m, char *txt);
++void mutex_print_set(int state);
++
++#endif
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/nanosleep.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/nanosleep.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/nanosleep.c	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/nanosleep.c	2025-10-08 11:50:32.494789831 +0300
+@@ -4,24 +4,12 @@
+  * No warranty is given; refer to the file DISCLAIMER.PD within this package.
+  */
+ 
+-#ifdef HAVE_CONFIG_H
+-#include "config.h"
+-#endif
+-
+-#include <assert.h>
+ #include <errno.h>
+ #include <time.h>
+-
+-#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+-
+-#define WINPTHREAD_NANOSLEEP_DECL WINPTHREAD_API
+-
+-/* public header files */
+ #include "pthread.h"
+ #include "pthread_time.h"
+-/* internal header files */
+-#include "thread.h"
++#include "winpthread_internal.h"
+ 
+ #define POW10_3                 1000
+ #define POW10_4                 10000
+@@ -37,7 +25,7 @@
+  *         If the function fails, the return value is -1,
+  *         with errno set to indicate the error.
+  */
+-static int __nanosleep(const struct _timespec64 *request, struct _timespec64 *remain)
++int nanosleep(const struct timespec *request, struct timespec *remain)
+ {
+     unsigned long ms, rc = 0;
+     unsigned __int64 u64, want, real;
+@@ -60,7 +48,7 @@ static int __nanosleep(const struct _tim
+         else ms = (unsigned long) u64;
+ 
+         u64 -= ms;
+-        rc = _pthread_delay_np_ms(ms);
++        rc = pthread_delay_np_ms(ms);
+     }
+ 
+     if (rc != 0) { /* WAIT_IO_COMPLETION (192) */
+@@ -80,30 +68,4 @@ static int __nanosleep(const struct _tim
+     }
+ 
+     return 0;
+-}
+-
+-int nanosleep64(const struct _timespec64 *request, struct _timespec64 *remain)
+-{
+-    return __nanosleep (request, remain);
+-}
+-
+-int nanosleep32(const struct _timespec32 *request, struct _timespec32 *remain)
+-{
+-    struct _timespec64 request64 = {
+-        .tv_sec = request->tv_sec,
+-        .tv_nsec = request->tv_nsec
+-    };
+-    struct _timespec64 remain64 = {0};
+-
+-    if (__nanosleep (&request64, &remain64) == -1)
+-        return -1;
+-
+-    assert (remain64.tv_sec <= INT_MAX);
+-
+-    if (remain != NULL) {
+-        remain->tv_sec = (__time32_t)remain64.tv_sec;
+-        remain->tv_nsec = remain64.tv_nsec;
+-    }
+-
+-    return 0;
+ }
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/ref.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/ref.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/ref.c	1970-01-01 03:00:00.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/ref.c	2025-10-08 11:50:32.494789831 +0300
+@@ -0,0 +1,35 @@
++/*
++   Copyright (c) 2011 mingw-w64 project
++
++   Permission is hereby granted, free of charge, to any person obtaining a
++   copy of this software and associated documentation files (the "Software"),
++   to deal in the Software without restriction, including without limitation
++   the rights to use, copy, modify, merge, publish, distribute, sublicense,
++   and/or sell copies of the Software, and to permit persons to whom the
++   Software is furnished to do so, subject to the following conditions:
++
++   The above copyright notice and this permission notice shall be included in
++   all copies or substantial portions of the Software.
++
++   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
++   DEALINGS IN THE SOFTWARE.
++*/
++
++#include <windows.h>
++#include <winternl.h>
++#include <stdio.h>
++#include "pthread.h"
++#include "semaphore.h"
++#include "mutex.h"
++#include "rwlock.h"
++#include "cond.h"
++#include "barrier.h"
++#include "sem.h"
++#include "ref.h"
++#include "misc.h"
++
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/ref.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/ref.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/ref.h	1970-01-01 03:00:00.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/ref.h	2025-10-08 11:50:32.494789831 +0300
+@@ -0,0 +1,29 @@
++/*
++   Copyright (c) 2011 mingw-w64 project
++
++   Permission is hereby granted, free of charge, to any person obtaining a
++   copy of this software and associated documentation files (the "Software"),
++   to deal in the Software without restriction, including without limitation
++   the rights to use, copy, modify, merge, publish, distribute, sublicense,
++   and/or sell copies of the Software, and to permit persons to whom the
++   Software is furnished to do so, subject to the following conditions:
++
++   The above copyright notice and this permission notice shall be included in
++   all copies or substantial portions of the Software.
++
++   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
++   DEALINGS IN THE SOFTWARE.
++*/
++
++#ifndef WIN_PTHREADS_REF_H
++#define WIN_PTHREADS_REF_H
++#include "pthread.h"
++#include "semaphore.h"
++
++#endif
++
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/rwlock.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/rwlock.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/rwlock.c	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/rwlock.c	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -20,25 +20,14 @@
+    DEALINGS IN THE SOFTWARE.
+ */
+ 
+-#ifdef HAVE_CONFIG_H
+-#include "config.h"
+-#endif
+-
+-#include <assert.h>
+-#include <malloc.h>
+-#include <stdio.h>
+-
+-#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+-
+-#define WINPTHREAD_RWLOCK_DECL WINPTHREAD_API
+-
+-/* public header files */
++#include <stdio.h>
++#include <malloc.h>
+ #include "pthread.h"
+-/* internal header files */
+-#include "misc.h"
+-#include "rwlock.h"
+ #include "thread.h"
++#include "ref.h"
++#include "rwlock.h"
++#include "misc.h"
+ 
+ static pthread_spinlock_t rwl_global = PTHREAD_SPINLOCK_INITIALIZER;
+ 
+@@ -47,7 +36,9 @@ static WINPTHREADS_ATTRIBUTE((noinline))
+ static WINPTHREADS_ATTRIBUTE((noinline)) int rwl_unref(volatile pthread_rwlock_t *rwl, int res)
+ {
+     pthread_spin_lock(&rwl_global);
++#ifdef WINPTHREAD_DBG
+     assert((((rwlock_t *)*rwl)->valid == LIFE_RWLOCK) && (((rwlock_t *)*rwl)->busy > 0));
++#endif
+      ((rwlock_t *)*rwl)->busy--;
+     pthread_spin_unlock(&rwl_global);
+     return res;
+@@ -56,11 +47,7 @@ static WINPTHREADS_ATTRIBUTE((noinline))
+ static WINPTHREADS_ATTRIBUTE((noinline)) int rwl_ref(pthread_rwlock_t *rwl, int f )
+ {
+     int r = 0;
+-    if (STATIC_RWL_INITIALIZER(*rwl)) {
+-        r = rwlock_static_init(rwl);
+-        if (r != 0 && r != EBUSY)
+-            return r;
+-    }
++    INIT_RWLOCK(rwl);
+     pthread_spin_lock(&rwl_global);
+ 
+     if (!rwl || !*rwl || ((rwlock_t *)*rwl)->valid != LIFE_RWLOCK) r = EINVAL;
+@@ -94,18 +81,18 @@ static WINPTHREADS_ATTRIBUTE((noinline))
+ {
+     int r = 0;
+ 
+-    *rDestroy = (pthread_rwlock_t)NULL;
++    *rDestroy = NULL;
+     pthread_spin_lock(&rwl_global);
+-
++    
+     if (!rwl || !*rwl) r = EINVAL;
+     else {
+         rwlock_t *r_ = (rwlock_t *)*rwl;
+-        if (STATIC_RWL_INITIALIZER(*rwl)) *rwl = (pthread_rwlock_t)NULL;
++        if (STATIC_RWL_INITIALIZER(*rwl)) *rwl = NULL;
+         else if (r_->valid != LIFE_RWLOCK) r = EINVAL;
+         else if (r_->busy) r = EBUSY;
+         else {
+             *rDestroy = *rwl;
+-            *rwl = (pthread_rwlock_t)NULL;
++            *rwl = NULL;
+         }
+     }
+ 
+@@ -137,6 +124,30 @@ static int rwlock_free_both_locks(rwlock
+   return ret;
+ }
+ 
++#ifdef WINPTHREAD_DBG
++static int print_state = 0;
++void rwl_print_set(int state)
++{
++    print_state = state;
++}
++
++void rwl_print(volatile pthread_rwlock_t *rwl, char *txt)
++{
++    if (!print_state) return;
++    rwlock_t *r = (rwlock_t *)*rwl;
++    if (r == NULL) {
++        printf("RWL%p %d %s\n",*rwl,(int)GetCurrentThreadId(),txt);
++    } else {
++        printf("RWL%p %d V=%0X B=%d r=%ld w=%ld L=%p %s\n",
++            *rwl, 
++            (int)GetCurrentThreadId(), 
++            (int)r->valid, 
++            (int)r->busy,
++            0L,0L,NULL,txt);
++    }
++}
++#endif
++
+ static pthread_spinlock_t cond_locked = PTHREAD_SPINLOCK_INITIALIZER;
+ 
+ static WINPTHREADS_ATTRIBUTE((noinline)) int rwlock_static_init(pthread_rwlock_t *rw)
+@@ -150,7 +161,7 @@ static WINPTHREADS_ATTRIBUTE((noinline))
+   }
+   r = pthread_rwlock_init (rw, NULL);
+   pthread_spin_unlock(&cond_locked);
+-
++  
+   return r;
+ }
+ 
+@@ -161,9 +172,9 @@ int pthread_rwlock_init (pthread_rwlock_
+ 
+     if(!rwlock_)
+       return EINVAL;
+-    *rwlock_ = (pthread_rwlock_t)NULL;
+-    if ((rwlock = calloc(1, sizeof(*rwlock))) == NULL)
+-      return ENOMEM;
++    *rwlock_ = NULL;
++    if ((rwlock = (pthread_rwlock_t)calloc(1, sizeof(*rwlock))) == NULL)
++      return ENOMEM; 
+     rwlock->valid = DEAD_RWLOCK;
+ 
+     rwlock->nex_count = rwlock->nsh_count = rwlock->ncomplete = 0;
+@@ -186,20 +197,20 @@ int pthread_rwlock_init (pthread_rwlock_
+       return r;
+     }
+     rwlock->valid = LIFE_RWLOCK;
+-    *rwlock_ = (pthread_rwlock_t)rwlock;
++    *rwlock_ = rwlock;
+     return r;
+-}
++} 
+ 
+ int pthread_rwlock_destroy (pthread_rwlock_t *rwlock_)
+ {
+     rwlock_t *rwlock;
+     pthread_rwlock_t rDestroy;
+     int r, r2;
+-
++    
+     pthread_spin_lock(&cond_locked);
+     r = rwl_ref_destroy(rwlock_,&rDestroy);
+     pthread_spin_unlock(&cond_locked);
+-
++    
+     if(r) return r;
+     if(!rDestroy) return 0; /* destroyed a (still) static initialized rwl */
+ 
+@@ -228,9 +239,9 @@ int pthread_rwlock_destroy (pthread_rwlo
+     r2 = pthread_mutex_destroy(&rwlock->mcomplete);
+     if (!r) r = r2;
+     rwlock->valid  = DEAD_RWLOCK;
+-    free((void *)rDestroy);
++    free(rDestroy);
+     return 0;
+-}
++} 
+ 
+ int pthread_rwlock_rdlock (pthread_rwlock_t *rwlock_)
+ {
+@@ -264,8 +275,7 @@ int pthread_rwlock_rdlock (pthread_rwloc
+   return rwl_unref(rwlock_, ret);
+ }
+ 
+-/* Internal version which always uses `struct _timespec64`. */
+-static int __pthread_rwlock_timedrdlock (pthread_rwlock_t *rwlock_, const struct _timespec64 *ts)
++int pthread_rwlock_timedrdlock (pthread_rwlock_t *rwlock_, const struct timespec *ts)
+ {
+   rwlock_t *rwlock;
+   int ret;
+@@ -276,12 +286,12 @@ static int __pthread_rwlock_timedrdlock
+   if(ret != 0) return ret;
+ 
+   rwlock = (rwlock_t *)*rwlock_;
+-  if ((ret = pthread_mutex_timedlock64 (&rwlock->mex, ts)) != 0)
++  if ((ret = pthread_mutex_timedlock (&rwlock->mex, ts)) != 0)
+       return rwl_unref(rwlock_, ret);
+   InterlockedIncrement(&rwlock->nsh_count);
+   if (rwlock->nsh_count == INT_MAX)
+   {
+-    ret = pthread_mutex_timedlock64(&rwlock->mcomplete, ts);
++    ret = pthread_mutex_timedlock(&rwlock->mcomplete, ts);
+     if (ret != 0)
+     {
+       if (ret == ETIMEDOUT)
+@@ -298,17 +308,6 @@ static int __pthread_rwlock_timedrdlock
+   return rwl_unref(rwlock_, ret);
+ }
+ 
+-int pthread_rwlock_timedrdlock64(pthread_rwlock_t *l, const struct _timespec64 *ts)
+-{
+-  return __pthread_rwlock_timedrdlock (l, ts);
+-}
+-
+-int pthread_rwlock_timedrdlock32(pthread_rwlock_t *l, const struct _timespec32 *ts)
+-{
+-  struct _timespec64 ts64 = {.tv_sec = ts->tv_sec, .tv_nsec = ts->tv_nsec};
+-  return __pthread_rwlock_timedrdlock (l, &ts64);
+-}
+-
+ int pthread_rwlock_tryrdlock (pthread_rwlock_t *rwlock_)
+ {
+   rwlock_t *rwlock;
+@@ -337,7 +336,7 @@ int pthread_rwlock_tryrdlock (pthread_rw
+   }
+   ret = pthread_mutex_unlock(&rwlock->mex);
+   return rwl_unref(rwlock_,ret);
+-}
++} 
+ 
+ int pthread_rwlock_trywrlock (pthread_rwlock_t *rwlock_)
+ {
+@@ -375,7 +374,7 @@ int pthread_rwlock_trywrlock (pthread_rw
+   }
+   rwlock->nex_count = 1;
+   return rwl_unref(rwlock_, 0);
+-}
++} 
+ 
+ int pthread_rwlock_unlock (pthread_rwlock_t *rwlock_)
+ {
+@@ -406,7 +405,7 @@ int pthread_rwlock_unlock (pthread_rwloc
+     ret = rwlock_free_both_locks(rwlock, 0);
+   }
+   return rwl_unref(rwlock_, ret);
+-}
++} 
+ 
+ static void st_cancelwrite (void *arg)
+ {
+@@ -456,8 +455,7 @@ int pthread_rwlock_wrlock (pthread_rwloc
+   return rwl_unref(rwlock_,ret);
+ }
+ 
+-/* Internal version which always uses `struct _timespec64`. */
+-static int __pthread_rwlock_timedwrlock (pthread_rwlock_t *rwlock_, const struct _timespec64 *ts)
++int pthread_rwlock_timedwrlock (pthread_rwlock_t *rwlock_, const struct timespec *ts)
+ {
+   int ret;
+   rwlock_t *rwlock;
+@@ -469,10 +467,10 @@ static int __pthread_rwlock_timedwrlock
+     return ret;
+   rwlock = (rwlock_t *)*rwlock_;
+ 
+-  ret = pthread_mutex_timedlock64(&rwlock->mex, ts);
++  ret = pthread_mutex_timedlock(&rwlock->mex, ts);
+   if (ret != 0)
+     return rwl_unref(rwlock_,ret);
+-  ret = pthread_mutex_timedlock64(&rwlock->mcomplete, ts);
++  ret = pthread_mutex_timedlock (&rwlock->mcomplete, ts);
+   if (ret != 0)
+   {
+     pthread_mutex_unlock(&rwlock->mex);
+@@ -490,7 +488,7 @@ static int __pthread_rwlock_timedwrlock
+       rwlock->ncomplete = -rwlock->nsh_count;
+       pthread_cleanup_push(st_cancelwrite, (void *) rwlock);
+       do {
+-	ret = pthread_cond_timedwait64(&rwlock->ccomplete, &rwlock->mcomplete, ts);
++	ret = pthread_cond_timedwait(&rwlock->ccomplete, &rwlock->mcomplete, ts);
+       } while (rwlock->ncomplete < 0 && !ret);
+       pthread_cleanup_pop(!ret ? 0 : 1);
+ 
+@@ -503,17 +501,6 @@ static int __pthread_rwlock_timedwrlock
+   return rwl_unref(rwlock_,ret);
+ }
+ 
+-int pthread_rwlock_timedwrlock64(pthread_rwlock_t *rwlock, const struct _timespec64 *ts)
+-{
+-  return __pthread_rwlock_timedwrlock (rwlock, ts);
+-}
+-
+-int pthread_rwlock_timedwrlock32(pthread_rwlock_t *rwlock, const struct _timespec32 *ts)
+-{
+-  struct _timespec64 ts64 = {.tv_sec = ts->tv_sec, .tv_nsec = ts->tv_nsec};
+-  return __pthread_rwlock_timedwrlock (rwlock, &ts64);
+-}
+-
+ int pthread_rwlockattr_destroy(pthread_rwlockattr_t *a)
+ {
+   if (!a)
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/rwlock.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/rwlock.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/rwlock.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/rwlock.h	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -26,6 +26,9 @@
+ #define LIFE_RWLOCK 0xBAB1F0ED
+ #define DEAD_RWLOCK 0xDEADB0EF
+ 
++#define INIT_RWLOCK(rwl)  { int r; \
++    if (STATIC_RWL_INITIALIZER(*rwl)) { if ((r = rwlock_static_init(rwl))) { if (r != EBUSY) return r; }}}
++
+ #define STATIC_RWL_INITIALIZER(x)		((pthread_rwlock_t)(x) == ((pthread_rwlock_t)PTHREAD_RWLOCK_INITIALIZER))
+ 
+ typedef struct rwlock_t rwlock_t;
+@@ -43,4 +46,7 @@ struct rwlock_t {
+ #define RWL_SET	0x01
+ #define RWL_TRY	0x02
+ 
++void rwl_print(volatile pthread_rwlock_t *rwl, char *txt);
++void rwl_print_set(int state);
++
+ #endif
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/sched.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/sched.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/sched.c	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/sched.c	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011-2013 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -20,21 +20,13 @@
+    DEALINGS IN THE SOFTWARE.
+ */
+ 
+-#ifdef HAVE_CONFIG_H
+-#include "config.h"
+-#endif
+-
+-#include <stdio.h>
+-
+-#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+-
+-/* public header files */
++#include <stdio.h>
+ #include "pthread.h"
+-/* internal header files */
+-#include "misc.h"
+ #include "thread.h"
+ 
++#include "misc.h"
++
+ int sched_get_priority_min(int pol)
+ {
+   if (pol < SCHED_MIN || pol > SCHED_MAX) {
+@@ -86,7 +78,7 @@ int pthread_attr_setschedpolicy (pthread
+   return 0;
+ }
+ 
+-int pthread_attr_getschedpolicy (const pthread_attr_t *attr, int *pol)
++int pthread_attr_getschedpolicy (pthread_attr_t *attr, int *pol)
+ {
+   if (!attr || !pol)
+     return EINVAL;
+@@ -97,13 +89,18 @@ int pthread_attr_getschedpolicy (const p
+ static int pthread_check(pthread_t t)
+ {
+   struct _pthread_v *pv;
+-
++  DWORD dwFlags;
+   if (!t)
+     return ESRCH;
+   pv = __pth_gpointer_locked (t);
+-  if (pv->ended == 0)
+-    return 0;
+-  CHECK_OBJECT(pv, ESRCH);
++  if (!(pv->h) || pv->h == INVALID_HANDLE_VALUE)
++  {
++  	if (pv->ended == 0)
++  	  return 0;
++        return ESRCH;
++  }
++  else if ((!GetHandleInformation(pv->h, &dwFlags) && pv->ended))
++        return ESRCH;
+   return 0;
+ }
+ 
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/sem.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/sem.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/sem.c	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/sem.c	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -20,23 +20,16 @@
+    DEALINGS IN THE SOFTWARE.
+ */
+ 
+-#ifdef HAVE_CONFIG_H
+-#include "config.h"
+-#endif
+-
+-#include <malloc.h>
+-#include <stdio.h>
+-
+-#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+-
+-/* public header files */
++#include <stdio.h>
++#include <malloc.h>
+ #include "pthread.h"
+-#include "semaphore.h"
+-/* internal header files */
++#include "thread.h"
+ #include "misc.h"
++#include "semaphore.h"
+ #include "sem.h"
+-#include "thread.h"
++#include "mutex.h"
++#include "ref.h"
+ 
+ int do_sema_b_wait_intern (HANDLE sema, int nointerrupt, DWORD timeout);
+ 
+@@ -60,7 +53,7 @@ sem_init (sem_t *sem, int pshared, unsig
+   if (pshared != PTHREAD_PROCESS_PRIVATE)
+     return sem_result (EPERM);
+ 
+-  if ((sv = (sem_t) calloc (1,sizeof (*sv))) == NULL)
++  if (!(sv = (sem_t) calloc (1,sizeof (*sv))))
+     return sem_result (ENOMEM);
+ 
+   sv->value = value;
+@@ -220,9 +213,8 @@ sem_wait (sem_t *sem)
+   return sem_result (ret);
+ }
+ 
+-/* Internal version which always uses `struct _timespec64`. */
+-static int
+-__sem_timedwait (sem_t *sem, const struct _timespec64 *t)
++int
++sem_timedwait (sem_t *sem, const struct timespec *t)
+ {
+   int cur_v, ret = 0;
+   DWORD dwr;
+@@ -260,21 +252,10 @@ __sem_timedwait (sem_t *sem, const struc
+   return sem_result (ret);
+ }
+ 
+-int sem_timedwait64(sem_t *sem, const struct _timespec64 *t)
+-{
+-  return __sem_timedwait (sem, t);
+-}
+-
+-int sem_timedwait32(sem_t *sem, const struct _timespec32 *t)
+-{
+-  struct _timespec64 t64 = {.tv_sec = t->tv_sec, .tv_nsec = t->tv_nsec};
+-  return __sem_timedwait (sem, &t64);
+-}
+-
+ int
+ sem_post (sem_t *sem)
+ {
+-  _sem_t *sv;
++  _sem_t *sv;;
+ 
+   if (sem_std_enter (sem, &sv, 0) != 0)
+     return -1;
+@@ -300,7 +281,7 @@ int
+ sem_post_multiple (sem_t *sem, int count)
+ {
+   int waiters_count;
+-  _sem_t *sv;
++  _sem_t *sv;;
+ 
+   if (count <= 0)
+     return sem_result (EINVAL);
+@@ -370,5 +351,5 @@ sem_getvalue (sem_t *sem, int *sval)
+ 
+   *sval = (int) sv->value;
+   pthread_mutex_unlock (&sv->vlock);
+-  return 0;
++  return 0;  
+ }
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/sem.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/sem.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/sem.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/sem.h	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -23,6 +23,9 @@
+ #ifndef WIN_SEM
+ #define WIN_SEM
+ 
++#include <windows.h>
++#include "mutex.h"
++
+ #define LIFE_SEM 0xBAB1F00D
+ #define DEAD_SEM 0xDEADBEEF
+ 
+@@ -35,4 +38,4 @@ struct _sem_t
+     pthread_mutex_t vlock;
+ };
+ 
+-#endif /* WIN_SEM */
++#endif /* WIN_SEM */
+\ No newline at end of file
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/spinlock.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/spinlock.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/spinlock.c	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/spinlock.c	2025-10-08 11:50:32.494789831 +0300
+@@ -1,6 +1,5 @@
+ /*
+    Copyright (c) 2013 mingw-w64 project
+-   Copyright (c) 2015 Intel Corporation
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -21,29 +20,118 @@
+    DEALINGS IN THE SOFTWARE.
+ */
+ 
+-#ifdef HAVE_CONFIG_H
+-#include "config.h"
+-#endif
+-
+-#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+-
+-/* public header files */
++#include <stdio.h>
++#include <malloc.h>
+ #include "pthread.h"
+-/* internal header files */
+ #include "misc.h"
+ 
+-/* We use the pthread_spinlock_t itself as a lock:
+-   -1 is free, 0 is locked.
+-   (This is dictated by PTHREAD_SPINLOCK_INITIALIZER, which we can't change
+-   without breaking binary compatibility.) */
+-typedef intptr_t spinlock_word_t;
++/* In theory, owner and locks are in CRITICAL_SECTION as well.
++In practise, however, the implementation of CRITICAL_SECTION
++should be regarded as opaque. That's why we replicate these
++members. */
++typedef struct spin_t {
++   DWORD owner;
++   DWORD locks;
++   CRITICAL_SECTION section;
++} spin_t;
++
++/* Per the MSDN documentation, Windows components such as the heap manager
++use a spin count of 4000. */
++static const DWORD kSpinCount = 4000;
++
++static volatile LONG global_lock = 0;
++
++static void
++enter_global_cs (void)
++{
++  while (global_lock || InterlockedExchange (&global_lock, 1))
++    asm volatile ("pause");
++}
++
++static void
++leave_global_cs (void)
++{
++  InterlockedExchange (&global_lock, 0);
++}
++
++static int
++static_spin_init (pthread_spinlock_t* lock)
++{
++  if (PTHREAD_SPINLOCK_INITIALIZER == *lock)
++    {
++      enter_global_cs ();
++      if (PTHREAD_SPINLOCK_INITIALIZER == *lock)
++        {
++          int initrv = pthread_spin_init (lock, PTHREAD_PROCESS_PRIVATE);
++          if (initrv < 0)
++            {
++              leave_global_cs ();
++              return initrv;
++            }
++        }
++      leave_global_cs ();
++    }
++  return 0;
++}
++
++
++/* Windows 98/Me hasn't SetCriticalSectionSpinCount but has
++   InitializeCriticalSectionAndSpinCount
++   Windows NT/95 hasn't enyone, so call SetCritical only.
++   MSDN: "On single-processor systems, the spin count is ignored and the critical section spin count is set to zero (0)."
++   ... so for Win9x ignore it anyway and call only InitializeCriticalSection
++*/
++typedef BOOL (WINAPI *ICSASCFunc)(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount);
++static ICSASCFunc ICSASCProc = NULL;
++static BOOL ICSASCSearch = FALSE;
+ 
+ int
+ pthread_spin_init (pthread_spinlock_t *lock, int pshared)
+ {
+-  spinlock_word_t *lk = (spinlock_word_t *)lock;
+-  *lk = -1;
++  spin_t *spin;
++
++  if (!lock)
++    return EINVAL; 
++
++  if (pshared != PTHREAD_PROCESS_PRIVATE)
++    return ENOTSUP;
++
++  if (!(spin = (spin_t*) calloc (1, sizeof(*spin))))
++    return ENOMEM;
++
++//  InitializeCriticalSection (&spin->section);
++//  SetCriticalSectionSpinCount (&spin->section, kSpinCount);
++  
++  if(!ICSASCSearch)
++  {
++  	DWORD GV = GetVersion();
++  	if((DWORD)(LOBYTE(LOWORD(GV))) >= 5) /* only for 2k, XP ... */
++  	{
++	  	HANDLE hKernel32 = GetModuleHandleA("kernel32.dll");
++		  if(hKernel32)
++	  	{
++			  ICSASCProc = (ICSASCFunc)GetProcAddress(hKernel32, "InitializeCriticalSectionAndSpinCount");
++	  	}
++	  }
++  	ICSASCSearch = TRUE;
++  }
++  
++#if 1
++  if(ICSASCProc)
++  {
++  	ICSASCProc(&spin->section, kSpinCount);
++  }
++  else
++  {
++    InitializeCriticalSection (&spin->section);
++    //SetCriticalSectionSpinCount (&spin->section, kSpinCount);
++  }
++#else
++  InitializeCriticalSectionAndSpinCount(&spin->section, kSpinCount); 
++#endif
++  
++  *lock = spin;
+   return 0;
+ }
+ 
+@@ -51,32 +139,96 @@ pthread_spin_init (pthread_spinlock_t *l
+ int
+ pthread_spin_destroy (pthread_spinlock_t *lock)
+ {
++  spin_t *spin;
++
++  if (!lock || !*lock)
++    return EINVAL;
++
++  enter_global_cs ();
++  if (*lock == PTHREAD_SPINLOCK_INITIALIZER)
++    {
++      *lock = NULL;
++      leave_global_cs ();
++      return 0;
++    }
++
++  spin = (spin_t*)*lock;
++  if (spin->owner && spin->owner != GetCurrentThreadId ())
++    {
++      leave_global_cs ();
++      return EPERM;
++    }
++
++  DeleteCriticalSection (&spin->section);
++  free (spin);
++  *lock = NULL;
++  leave_global_cs ();
+   return 0;
+ }
+ 
+ int
+ pthread_spin_lock (pthread_spinlock_t *lock)
+ {
+-  volatile spinlock_word_t *lk = (volatile spinlock_word_t *)lock;
+-  while (unlikely(InterlockedExchangePointer((PVOID volatile *)lk, 0) == 0))
+-    do {
+-      YieldProcessor();
+-    } while (*lk == 0);
++  spin_t *spin;
++  int rv = 0;
++
++  if (!lock || !*lock)
++    return EINVAL;
++
++  rv = static_spin_init (lock);
++  if (rv < 0)
++    return rv;
++
++  spin = (spin_t*)*lock;
++  EnterCriticalSection (&spin->section);
++  spin->owner = GetCurrentThreadId ();
++  spin->locks++;
+   return 0;
+ }
+-
++  
+ int
+ pthread_spin_trylock (pthread_spinlock_t *lock)
+ {
+-  spinlock_word_t *lk = (spinlock_word_t *)lock;
+-  return InterlockedExchangePointer((PVOID volatile *)lk, 0) == 0 ? EBUSY : 0;
++  spin_t *spin;
++  int rv = 0;
++
++  if (!lock || !*lock)
++    return EINVAL;
++
++  rv = static_spin_init (lock);
++  if (rv < 0)
++    return rv;
++
++  spin = (spin_t*)*lock;
++  /*if (!TryEnterCriticalSection (&spin->section))
++      return EBUSY;*/
++  //EnterCriticalSection(&spin->section);
++  if (!TryEnterCriticalSection9x (&spin->section))
++      return EBUSY;
++      
++  spin->owner = GetCurrentThreadId ();
++  spin->locks++;
++  return 0;
+ }
+ 
+ 
+ int
+ pthread_spin_unlock (pthread_spinlock_t *lock)
+ {
+-  volatile spinlock_word_t *lk = (volatile spinlock_word_t *)lock;
+-  *lk = -1;
++  spin_t *spin;
++
++  if (!lock || !*lock)
++    return EINVAL;
++
++  if (*lock == PTHREAD_SPINLOCK_INITIALIZER)
++    return EPERM;
++
++  spin = (spin_t*)*lock;
++  if (spin->owner != GetCurrentThreadId ())
++    return EPERM;
++
++  if (!--spin->locks)
++    spin->owner = 0;
++  LeaveCriticalSection (&spin->section);
+   return 0;
+ }
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/thread.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/thread.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/thread.c	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/thread.c	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -20,27 +20,16 @@
+    DEALINGS IN THE SOFTWARE.
+ */
+ 
+-#ifdef HAVE_CONFIG_H
+-#include "config.h"
+-#endif
+-
+-#include <malloc.h>
+-#include <signal.h>
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <wchar.h>
+-
+-#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+ #include <strsafe.h>
+-
+-#define WINPTHREAD_THREAD_DECL WINPTHREAD_API
+-
+-/* public header files */
++#include <stdio.h>
++#include <stdlib.h>
++#include <malloc.h>
++#include <signal.h>
+ #include "pthread.h"
+-/* internal header files */
+-#include "misc.h"
+ #include "thread.h"
++#include "misc.h"
++#include "winpthread_internal.h"
+ 
+ static _pthread_v *__pthread_self_lite (void);
+ 
+@@ -65,15 +54,7 @@ static size_t idListCnt = 0;
+ static size_t idListMax = 0;
+ static pthread_t idListNextId = 0;
+ 
+-#if !defined(_MSC_VER)
+-#define USE_VEH_FOR_MSC_SETTHREADNAME
+-#endif
+-#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+-/* forbidden RemoveVectoredExceptionHandler/AddVectoredExceptionHandler APIs */
+-#undef USE_VEH_FOR_MSC_SETTHREADNAME
+-#endif
+-
+-#if defined(USE_VEH_FOR_MSC_SETTHREADNAME)
++#if (!defined(_MSC_VER) && !defined(NO_VEH)) || defined (USE_VEH_FOR_MSC_SETTHREADNAME)
+ static void *SetThreadName_VEH_handle = NULL;
+ 
+ static LONG __stdcall
+@@ -85,19 +66,6 @@ SetThreadName_VEH (PEXCEPTION_POINTERS E
+ 
+   return EXCEPTION_CONTINUE_SEARCH;
+ }
+-
+-static PVOID (WINAPI *AddVectoredExceptionHandlerFuncPtr) (ULONG, PVECTORED_EXCEPTION_HANDLER);
+-static ULONG (WINAPI *RemoveVectoredExceptionHandlerFuncPtr) (PVOID);
+-
+-static void __attribute__((constructor))
+-ctor (void)
+-{
+-  HMODULE module = GetModuleHandleA("kernel32.dll");
+-  if (module) {
+-    AddVectoredExceptionHandlerFuncPtr = (__typeof__(AddVectoredExceptionHandlerFuncPtr)) GetProcAddress(module, "AddVectoredExceptionHandler");
+-    RemoveVectoredExceptionHandlerFuncPtr = (__typeof__(RemoveVectoredExceptionHandlerFuncPtr)) GetProcAddress(module, "RemoveVectoredExceptionHandler");
+-  }
+-}
+ #endif
+ 
+ typedef struct _THREADNAME_INFO
+@@ -119,12 +87,12 @@ SetThreadName (DWORD dwThreadID, LPCSTR
+    info.dwThreadID = dwThreadID;
+    info.dwFlags = 0;
+ 
+-   infosize = sizeof (info) / sizeof (ULONG_PTR);
++   infosize = sizeof (info) / sizeof (DWORD);
+ 
+ #if defined(_MSC_VER) && !defined (USE_VEH_FOR_MSC_SETTHREADNAME)
+    __try
+      {
+-       RaiseException (EXCEPTION_SET_THREAD_NAME, 0, infosize, (ULONG_PTR *)&info);
++       RaiseException (EXCEPTION_SET_THREAD_NAME, 0, infosize, (DWORD *) &info);
+      }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+      {
+@@ -133,14 +101,16 @@ SetThreadName (DWORD dwThreadID, LPCSTR
+    /* Without a debugger we *must* have an exception handler,
+     * otherwise raising an exception will crash the process.
+     */
+-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
++ #ifdef NO_VEH
++// Windows 95 havent IsDebuggerPresent
++//   if (!IsDebuggerPresent ())
++     return;
++ #else
+    if ((!IsDebuggerPresent ()) && (SetThreadName_VEH_handle == NULL))
+-#else
+-   if (!IsDebuggerPresent ())
+-#endif
+      return;
++ #endif
+ 
+-   RaiseException (EXCEPTION_SET_THREAD_NAME, 0, infosize, (ULONG_PTR *) &info);
++   RaiseException (EXCEPTION_SET_THREAD_NAME, 0, infosize, (DWORD *) &info);
+ #endif
+ }
+ 
+@@ -332,10 +302,7 @@ push_pthread_mem (_pthread_v *sv)
+   if (pthr_last == NULL)
+     pthr_root = pthr_last = sv;
+   else
+-  {
+     pthr_last->next = sv;
+-    pthr_last = sv;
+-  }
+   pthread_mutex_unlock (&mtx_pthr_locked);
+ }
+ 
+@@ -379,9 +346,10 @@ pop_pthread_mem (void)
+ static void
+ free_pthread_mem (void)
+ {
+-#if 0
+   _pthread_v *t;
+ 
++  if (1)
++  return;  
+   pthread_mutex_lock (&mtx_pthr_locked);
+   t = pthr_root;
+   while (t != NULL)
+@@ -411,8 +379,6 @@ free_pthread_mem (void)
+     pthr_root = t;
+   }
+   pthread_mutex_unlock (&mtx_pthr_locked);
+-#endif
+-  return;
+ }
+ 
+ static void
+@@ -423,11 +389,24 @@ replace_spin_keys (pthread_spinlock_t *o
+ 
+   if (EPERM == pthread_spin_destroy (old))
+     {
+-#define THREADERR "Error cleaning up spin_keys for thread %lu.\n"
+-      char threaderr[sizeof(THREADERR) + 8] = { 0 };
+-      snprintf(threaderr, sizeof(threaderr), THREADERR, GetCurrentThreadId());
++#define THREADERR "Error cleaning up spin_keys for thread "
++#define THREADERR_LEN ((sizeof (THREADERR) / sizeof (*THREADERR)) - 1)
++#define THREADID_LEN THREADERR_LEN + 66 + 1 + 1
++      int i;
++      char thread_id[THREADID_LEN] = THREADERR;
++      _ultoa ((unsigned long) GetCurrentThreadId (), &thread_id[THREADERR_LEN], 10);
++      for (i = THREADERR_LEN; thread_id[i] != '\0' && i < THREADID_LEN - 1; i++)
++        {
++        }
++      if (i < THREADID_LEN - 1)
++        {
++          thread_id[i] = '\n';
++          thread_id[i + 1] = '\0';
++        }
+ #undef THREADERR
+-      OutputDebugStringA (threaderr);
++#undef THREADERR_LEN
++#undef THREADID_LEN
++      OutputDebugStringA (thread_id);
+       abort ();
+     }
+ 
+@@ -435,7 +414,7 @@ replace_spin_keys (pthread_spinlock_t *o
+ }
+ 
+ /* Hook for TLS-based deregistration/registration of thread.  */
+-static void WINAPI
++static BOOL WINAPI
+ __dyn_tls_pthread (HANDLE hDllHandle, DWORD dwReason, LPVOID lpreserved)
+ {
+   _pthread_v *t = NULL;
+@@ -443,11 +422,10 @@ __dyn_tls_pthread (HANDLE hDllHandle, DW
+ 
+   if (dwReason == DLL_PROCESS_DETACH)
+     {
+-#if defined(USE_VEH_FOR_MSC_SETTHREADNAME)
++#if (!defined(_MSC_VER) && !defined(NO_VEH)) || defined (USE_VEH_FOR_MSC_SETTHREADNAME)
+       if (lpreserved == NULL && SetThreadName_VEH_handle != NULL)
+         {
+-          if (RemoveVectoredExceptionHandlerFuncPtr != NULL)
+-            RemoveVectoredExceptionHandlerFuncPtr (SetThreadName_VEH_handle);
++          RemoveVectoredExceptionHandler (SetThreadName_VEH_handle);
+           SetThreadName_VEH_handle = NULL;
+         }
+ #endif
+@@ -455,11 +433,9 @@ __dyn_tls_pthread (HANDLE hDllHandle, DW
+     }
+   else if (dwReason == DLL_PROCESS_ATTACH)
+     {
+-#if defined(USE_VEH_FOR_MSC_SETTHREADNAME)
+-      if (AddVectoredExceptionHandlerFuncPtr != NULL)
+-        SetThreadName_VEH_handle = AddVectoredExceptionHandlerFuncPtr (1, &SetThreadName_VEH);
+-      else
+-        SetThreadName_VEH_handle = NULL;
++#if (!defined(_MSC_VER) && !defined(NO_VEH)) || defined (USE_VEH_FOR_MSC_SETTHREADNAME)
++      SetThreadName_VEH_handle = AddVectoredExceptionHandler (1, &SetThreadName_VEH);
++      #error AddVectoredExceptionHandler
+       /* Can't do anything on error anyway, check for NULL later */
+ #endif
+     }
+@@ -502,7 +478,7 @@ __dyn_tls_pthread (HANDLE hDllHandle, DW
+ 	      push_pthread_mem (t);
+ 	      t = NULL;
+ 	      TlsSetValue (_pthread_tls, t);
+-	      return;
++	      return TRUE;
+ 	    }
+ 	  pthread_mutex_destroy(&t->p_clock);
+ 	  replace_spin_keys (&t->spin_keys, new_spin_keys);
+@@ -516,38 +492,45 @@ __dyn_tls_pthread (HANDLE hDllHandle, DW
+ 	  replace_spin_keys (&t->spin_keys, new_spin_keys);
+ 	}
+     }
++  return TRUE;
+ }
+ 
+ /* TLS-runtime section variable.  */
++#ifdef _MSC_VER
++#pragma section(".CRT$XLF", shared)
++#endif
++PIMAGE_TLS_CALLBACK WINPTHREADS_ATTRIBUTE((WINPTHREADS_SECTION(".CRT$XLF"))) __xl_f  = (PIMAGE_TLS_CALLBACK) __dyn_tls_pthread;
++#ifdef _MSC_VER
++#pragma data_seg()
++#endif
+ 
+-#if defined(_MSC_VER)
+-/* Force a reference to _tls_used to make the linker create the TLS
+- * directory if it's not already there.  (e.g. if __declspec(thread)
+- * is not used).
+- * Force a reference to __xl_f to prevent whole program optimization
+- * from discarding the variable. */
+-
+-/* On x86, symbols are prefixed with an underscore. */
+-# if defined(_M_IX86)
+-#   pragma comment(linker, "/include:__tls_used")
+-#   pragma comment(linker, "/include:___xl_f")
+-# else
+-#   pragma comment(linker, "/include:_tls_used")
+-#   pragma comment(linker, "/include:__xl_f")
+-# endif
+-
+-/* .CRT$XLA to .CRT$XLZ is an array of PIMAGE_TLS_CALLBACK
+- * pointers. Pick an arbitrary location for our callback.
+- *
+- * See VC\...\crt\src\vcruntime\tlssup.cpp for reference. */
++#ifdef WINPTHREAD_DBG
++static int print_state = 0;
++void thread_print_set (int state)
++{
++  print_state = state;
++}
+ 
+-# pragma section(".CRT$XLF", long, read)
++void
++thread_print (volatile pthread_t t, char *txt)
++{
++    if (!print_state)
++      return;
++    if (!t)
++      printf("T%p %d %s\n",NULL,(int)GetCurrentThreadId(),txt);
++    else
++      {
++	printf("T%p %d V=%0X H=%p %s\n",
++	    __pth_gpointer_locked (t), 
++	    (int)GetCurrentThreadId(), 
++	    (int) (__pth_gpointer_locked (t))->valid, 
++	    (__pth_gpointer_locked (t))->h,
++	    txt
++	    );
++      }
++}
+ #endif
+ 
+-WINPTHREADS_ATTRIBUTE((WINPTHREADS_SECTION(".CRT$XLF")))
+-extern const PIMAGE_TLS_CALLBACK __xl_f;
+-const PIMAGE_TLS_CALLBACK __xl_f = __dyn_tls_pthread;
+-
+ /* Internal collect-once structure.  */
+ typedef struct collect_once_t {
+   pthread_once_t *o;
+@@ -612,7 +595,7 @@ leaveOnceObject (collect_once_t *c)
+ 	}
+     }
+   else
+-    fprintf(stderr, "%p not found?!?!\n", (void *) c);
++    fprintf(stderr, "%p not found?!?!\n", c);
+   pthread_spin_unlock (&once_global);
+ }
+ 
+@@ -643,7 +626,7 @@ _pthread_once_raw (pthread_once_t *o, vo
+       *o = 1;
+     }
+   else if (*o != 1)
+-    fprintf (stderr," once %p is %ld\n", (void *) o, (long) *o);
++    fprintf (stderr," once %p is %d\n", o, (int) *o);
+   pthread_mutex_unlock(&co->m);
+   leaveOnceObject(co);
+ 
+@@ -660,8 +643,8 @@ pthread_timechange_handler_np(void *dumm
+ 
+ /* Compatibility routine for pthread-win32.  It waits for ellapse of
+    interval and additionally checks for possible thread-cancelation.  */
+-static int
+-__pthread_delay_np (const struct _timespec64 *interval)
++int
++pthread_delay_np (const struct timespec *interval)
+ {
+   DWORD to = (!interval ? 0 : dwMilliSecs (_pthread_time_in_ms_from_timespec (interval)));
+   struct _pthread_v *s = __pthread_self_lite ();
+@@ -675,28 +658,17 @@ __pthread_delay_np (const struct _timesp
+     }
+   pthread_testcancel ();
+   if (s->evStart)
+-    _pthread_wait_for_single_object (s->evStart, to);
++    WaitForSingleObject (s->evStart, to);
+   else
+     Sleep (to);
+   pthread_testcancel ();
+   return 0;
+ }
+ 
+-int
+-pthread_delay64_np (const struct _timespec64 *interval)
+-{
+-  return __pthread_delay_np(interval);
+-}
+-
+-int
+-pthread_delay32_np (const struct _timespec32 *interval)
+-{
+-  struct _timespec64 interval64 = {.tv_sec = interval->tv_sec, .tv_nsec = interval->tv_nsec};
+-  return __pthread_delay_np(&interval64);
+-}
++int pthread_delay_np_ms (DWORD to);
+ 
+ int
+-_pthread_delay_np_ms (DWORD to)
++pthread_delay_np_ms (DWORD to)
+ {
+   struct _pthread_v *s = __pthread_self_lite ();
+ 
+@@ -709,7 +681,7 @@ _pthread_delay_np_ms (DWORD to)
+     }
+   pthread_testcancel ();
+   if (s->evStart)
+-    _pthread_wait_for_single_object (s->evStart, to);
++    WaitForSingleObject (s->evStart, to);
+   else
+     Sleep (to);
+   pthread_testcancel ();
+@@ -719,7 +691,7 @@ _pthread_delay_np_ms (DWORD to)
+ /* Compatibility routine for pthread-win32.  It returns the
+    amount of available CPUs on system.  */
+ int
+-pthread_num_processors_np(void)
++pthread_num_processors_np(void) 
+ {
+   int r = 0;
+   DWORD_PTR ProcessAffinityMask, SystemAffinityMask;
+@@ -735,12 +707,13 @@ pthread_num_processors_np(void)
+ 
+ /* Compatiblity routine for pthread-win32.  Allows to set amount of used
+    CPUs for process.  */
++/*
+ int
+-pthread_set_num_processors_np(int n)
++pthread_set_num_processors_np(int n) 
+ {
+   DWORD_PTR ProcessAffinityMask, ProcessNewAffinityMask = 0, SystemAffinityMask;
+-  int r = 0;
+-  /* need at least 1 */
++  int r = 0; 
++  // need at least 1
+   n = n ? n : 1;
+   if (GetProcessAffinityMask (GetCurrentProcess (), &ProcessAffinityMask, &SystemAffinityMask))
+     {
+@@ -756,7 +729,7 @@ pthread_set_num_processors_np(int n)
+       SetProcessAffinityMask (GetCurrentProcess (),ProcessNewAffinityMask);
+     }
+   return r;
+-}
++}*/
+ 
+ int
+ pthread_once (pthread_once_t *o, void (*func)(void))
+@@ -779,7 +752,7 @@ pthread_once (pthread_once_t *o, void (*
+       *o = 1;
+     }
+   else if (*o != 1)
+-    fprintf (stderr," once %p is %ld\n", (void *) o, (long) *o);
++    fprintf (stderr," once %p is %d\n", o, (int) *o);
+   pthread_mutex_unlock(&co->m);
+   leaveOnceObject(co);
+ 
+@@ -872,7 +845,7 @@ pthread_key_delete (pthread_key_t key)
+     return EINVAL;
+ 
+   pthread_rwlock_wrlock (&_pthread_key_lock);
+-
++  
+   _pthread_key_dest[key] = NULL;
+ 
+   /* Start next search from our location */
+@@ -904,7 +877,7 @@ pthread_setspecific (pthread_key_t key,
+ {
+   DWORD lasterr = GetLastError ();
+   _pthread_v *t = __pthread_self_lite ();
+-
++  
+   pthread_spin_lock (&t->spin_keys);
+ 
+   if (key >= t->keymax)
+@@ -964,8 +937,7 @@ void
+ _pthread_cleanup_dest (pthread_t t)
+ {
+ 	_pthread_v *tv;
+-	unsigned int j;
+-	int i;
++	unsigned int i, j;
+ 
+ 	if (!t)
+ 		return;
+@@ -978,7 +950,7 @@ _pthread_cleanup_dest (pthread_t t)
+ 		int flag = 0;
+ 
+ 		pthread_spin_lock (&tv->spin_keys);
+-		for (i = tv->keymax - 1; i >= 0; i--)
++		for (i = 0; i < tv->keymax; i++)
+ 		{
+ 			void *val = tv->keyval[i];
+ 
+@@ -1059,7 +1031,7 @@ pthread_self (void)
+ 
+ /* Internal helper for getting event handle of thread T.  */
+ void *
+-pthread_getevent (void)
++pthread_getevent ()
+ {
+   _pthread_v *t = __pthread_self_lite ();
+   return (!t ? NULL : t->evStart);
+@@ -1270,16 +1242,10 @@ pthread_cancel (pthread_t t)
+ 	  GetThreadContext(tv->h, &ctxt);
+ #ifdef _M_X64
+ 	  ctxt.Rip = (uintptr_t) _pthread_invoke_cancel;
+-#elif defined(_M_IX86)
+-	  ctxt.Eip = (uintptr_t) _pthread_invoke_cancel;
+-#elif defined(_M_ARM) || defined(_M_ARM64)
+-	  ctxt.Pc = (uintptr_t) _pthread_invoke_cancel;
+ #else
+-#error Unsupported architecture
++	  ctxt.Eip = (uintptr_t) _pthread_invoke_cancel;
+ #endif
+-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+ 	  SetThreadContext (tv->h, &ctxt);
+-#endif
+ 
+ 	  /* Also try deferred Cancelling */
+ 	  tv->cancelled = 1;
+@@ -1416,23 +1382,7 @@ pthread_attr_getscope (const pthread_att
+ }
+ 
+ int
+-pthread_attr_getstack (const pthread_attr_t *attr, void **stack, size_t *size)
+-{
+-  *stack = (char *) attr->stack - attr->s_size;
+-  *size = attr->s_size;
+-  return 0;
+-}
+-
+-int
+-pthread_attr_setstack (pthread_attr_t *attr, void *stack, size_t size)
+-{
+-  attr->s_size = size;
+-  attr->stack = (char *) stack + size;
+-  return 0;
+-}
+-
+-int
+-pthread_attr_getstackaddr (const pthread_attr_t *attr, void **stack)
++pthread_attr_getstackaddr (pthread_attr_t *attr, void **stack)
+ {
+   *stack = attr->stack;
+   return 0;
+@@ -1512,22 +1462,12 @@ pthread_setcanceltype (int type, int *ol
+   return 0;
+ }
+ 
+-void _fpreset (void);
+-
+-#if defined(__i386__)
+-/* Align ESP on 16-byte boundaries. */
+-#  if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2))
+-__attribute__((force_align_arg_pointer))
+-#  endif
+-#endif
+-unsigned __stdcall
++int
+ pthread_create_wrapper (void *args)
+ {
+   unsigned rslt = 0;
+   struct _pthread_v *tv = (struct _pthread_v *)args;
+ 
+-  _fpreset();
+-
+   pthread_mutex_lock (&mtx_pthr_locked);
+   pthread_mutex_lock (&tv->p_clock);
+   _pthread_once_raw(&_pthread_tls_once, pthread_tls_init);
+@@ -1541,13 +1481,19 @@ pthread_create_wrapper (void *args)
+       intptr_t trslt = (intptr_t) 128;
+       /* Provide to this thread a default exception handler.  */
+       #ifdef __SEH__
+-	asm ("\t.tl_start:\n");
++	asm ("\t.tl_start:\n"
++	  "\t.seh_handler __C_specific_handler, @except\n"
++	  "\t.seh_handlerdata\n"
++	  "\t.long 1\n"
++	  "\t.rva .tl_start, .tl_end, _gnu_exception_handler ,.tl_end\n"
++	  "\t.text"
++	  );
+       #endif      /* Call function and save return value */
+       pthread_mutex_unlock (&mtx_pthr_locked);
+       if (tv->func)
+         trslt = (intptr_t) tv->func(tv->ret_arg);
+       #ifdef __SEH__
+-        asm ("\tnop\n\t.tl_end: nop\n");
++	asm ("\tnop\n\t.tl_end: nop\n");
+       #endif
+       pthread_mutex_lock (&mtx_pthr_locked);
+       tv->ret_arg = (void*) trslt;
+@@ -1576,28 +1522,12 @@ pthread_create_wrapper (void *args)
+     {
+       pthread_mutex_unlock (&tv->p_clock);
+       pthread_mutex_destroy (&tv->p_clock);
+-      /* Reinitialise p_clock, since there may be attempts at
+-         destroying it again in __dyn_tls_thread later on. */
+-      tv->p_clock = PTHREAD_MUTEX_INITIALIZER;
+       tv->ended = 1;
+     }
+   while (pthread_mutex_unlock (&mtx_pthr_locked) == 0)
+    Sleep (0);
+   _endthreadex (rslt);
+   return rslt;
+-
+-#if defined(__SEH__)
+-  asm(
+-#ifdef __arm__
+-    "\t.seh_handler __C_specific_handler, %except\n"
+-#else
+-    "\t.seh_handler __C_specific_handler, @except\n"
+-#endif
+-    "\t.seh_handlerdata\n"
+-    "\t.long 1\n"
+-    "\t.rva .tl_start, .tl_end, _gnu_exception_handler ,.tl_end\n"
+-    "\t.text\n");
+-#endif
+ }
+ 
+ int
+@@ -1606,12 +1536,9 @@ pthread_create (pthread_t *th, const pth
+   HANDLE thrd = NULL;
+   int redo = 0;
+   struct _pthread_v *tv;
+-  unsigned int ssize = 0;
++  size_t ssize = 0;
+   pthread_spinlock_t new_spin_keys = PTHREAD_SPINLOCK_INITIALIZER;
+ 
+-  if (attr && attr->s_size > UINT_MAX)
+-    return EINVAL;
+-
+   if ((tv = pop_pthread_mem ()) == NULL)
+     return EAGAIN;
+ 
+@@ -1651,7 +1578,7 @@ pthread_create (pthread_t *th, const pth
+     {
+       int inh = 0;
+       tv->p_state = attr->p_state;
+-      ssize = (unsigned int)attr->s_size;
++      ssize = attr->s_size;
+       pthread_attr_getinheritsched (attr, &inh);
+       if (inh)
+ 	{
+@@ -1664,7 +1591,7 @@ pthread_create (pthread_t *th, const pth
+   /* Make sure tv->h has value of INVALID_HANDLE_VALUE */
+   _ReadWriteBarrier();
+ 
+-  thrd = (HANDLE) _beginthreadex(NULL, ssize, pthread_create_wrapper, tv, 0x4/*CREATE_SUSPEND*/, NULL);
++  thrd = (HANDLE) _beginthreadex(NULL, ssize, (unsigned int (__stdcall *)(void *))pthread_create_wrapper, tv, 0x4/*CREATE_SUSPEND*/, NULL);
+   if (thrd == INVALID_HANDLE_VALUE)
+     thrd = 0;
+   /* Failed */
+@@ -1723,6 +1650,8 @@ pthread_join (pthread_t t, void **res)
+     return EINVAL;
+   if (pthread_equal(pthread_self(), t))
+     return EDEADLK;
++    
++  (void)dwFlags; /* mute warning */
+ 
+   /* pthread_testcancel (); */
+   if (tv->ended == 0 || (tv->h != NULL && tv->h != INVALID_HANDLE_VALUE))
+@@ -1756,6 +1685,8 @@ _pthread_tryjoin (pthread_t t, void **re
+       pthread_mutex_unlock (&mtx_pthr_locked);
+       return ESRCH;
+     }
++  
++  (void)dwFlags; /* mute warning */
+ 
+   if ((tv->p_state & PTHREAD_CREATE_DETACHED) != 0)
+     {
+@@ -1771,10 +1702,10 @@ _pthread_tryjoin (pthread_t t, void **re
+     {
+       if (tv->ended == 0)
+         {
+-	      pthread_mutex_unlock (&mtx_pthr_locked);
+-	      /* pthread_testcancel (); */
+-	      return EBUSY;
+-	    }
++	  pthread_mutex_unlock (&mtx_pthr_locked);
++	  /* pthread_testcancel (); */
++	  return EBUSY;
++	}
+     }
+   CloseHandle (tv->h);
+   if (tv->evStart)
+@@ -1809,6 +1740,9 @@ pthread_detach (pthread_t t)
+       pthread_mutex_unlock (&mtx_pthr_locked);
+       return ESRCH;
+     }
++    
++  (void)dwFlags; /* mute warning */
++    
+   if ((tv->p_state & PTHREAD_CREATE_DETACHED) != 0)
+     {
+       pthread_mutex_unlock (&mtx_pthr_locked);
+@@ -1875,22 +1809,6 @@ pthread_setname_np (pthread_t thread, co
+ 
+   tv->thread_name = stored_name;
+   SetThreadName (tv->tid, name);
+-
+-  if (_pthread_set_thread_description != NULL)
+-    {
+-      mbstate_t mbs = {0};
+-      size_t required_size = mbsrtowcs(NULL, &name, 0, &mbs);
+-      if (required_size != (size_t)-1)
+-        {
+-          wchar_t *wname = malloc((required_size + 1) * sizeof(wchar_t));
+-          if (wname != NULL)
+-            {
+-              mbsrtowcs(wname, &name, required_size + 1, &mbs);
+-              _pthread_set_thread_description(tv->h, wname);
+-              free(wname);
+-            }
+-        }
+-    }
+   return 0;
+ }
+ 
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/thread.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/thread.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/thread.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/thread.h	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+@@ -23,8 +23,8 @@
+ #ifndef WIN_PTHREAD_H
+ #define WIN_PTHREAD_H
+ 
++#include <windows.h>
+ #include <setjmp.h>
+-/* internal header files */
+ #include "rwlock.h"
+ 
+ #define LIFE_THREAD 0xBAB1F00D
+@@ -69,8 +69,11 @@ typedef struct __pthread_idlist {
+ 
+ int _pthread_tryjoin(pthread_t t, void **res);
+ void _pthread_setnobreak(int);
++#ifdef WINPTHREAD_DBG
++void thread_print_set(int state);
++void thread_print(volatile pthread_t t, char *txt);
++#endif
+ int  __pthread_shallcancel(void);
+-WINPTHREAD_API struct _pthread_v * __pth_gpointer_locked (pthread_t id);
+-int _pthread_delay_np_ms (DWORD to);
++struct _pthread_v *__pth_gpointer_locked (pthread_t id);
+ 
+ #endif
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/tryentercriticalsection.c mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/tryentercriticalsection.c
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/tryentercriticalsection.c	1970-01-01 03:00:00.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/tryentercriticalsection.c	2025-10-08 11:50:32.494789831 +0300
+@@ -0,0 +1,212 @@
++/*
++ *  KernelEx
++ *  Copyright (C) 2008, Xeno86
++ *
++ *  This file is part of KernelEx source code.
++ *
++ *  KernelEx is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published
++ *  by the Free Software Foundation; version 2 of the License.
++ *
++ *  KernelEx is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GNU Make; see the file COPYING.  If not, write to
++ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ */
++
++#include <windows.h>
++
++#define K32OBJ_CRITICAL_SECTION		4
++
++typedef struct _CRIT_SECT     // Size = 0x20 
++{
++	BYTE      Type;           // 00 = 4: K32_OBJECT_CRITICAL_SECTION
++	int       RecursionCount; // 04 initially 0, incremented on lock
++	void*     OwningThread;   // 08 pointer to TDBX
++	DWORD     un3;            // 0C
++	int       LockCount;      // 10 initially 1, decremented on lock
++	struct _CRIT_SECT* Next;  // 14
++	void*     PLst;           // 18 list of processes using it?
++	struct _WIN_CRITICAL_SECTION* UserCS; // 1C pointer to user defined CRITICAL_SECTION
++} CRIT_SECT, *PCRIT_SECT;
++
++typedef struct _WIN_CRITICAL_SECTION
++{
++	BYTE Type; //= 4: K32_OBJECT_CRITICAL_SECTION
++	PCRIT_SECT crit;
++	DWORD un1;
++	DWORD un2;
++	DWORD un3;
++	DWORD un4;
++} WIN_CRITICAL_SECTION, *PWIN_CRITICAL_SECTION;
++
++//static DWORD _offset;
++DWORD tesc_offset = 0;
++
++static BOOL init_tryentercritsec()
++{
++	DWORD GV = GetVersion();
++	
++	if (GV == 0xc0000a04) //98
++	{
++		tesc_offset = 0x58 - 0x8;
++		return TRUE;
++	}
++	if (GV == 0xc0005a04) //Me
++	{
++		tesc_offset = 0x88 - 0x8;
++		return TRUE;
++	}
++	// FIXME: 95
++	return FALSE;
++}
++
++#ifdef __GNUC__
++# ifdef __i386__
++
++BOOL WINAPI TryEnterCrst(CRIT_SECT* crit);
++
++__asm__(".text\n\t"
++		".align 4\n\t"
++		".globl _TryEnterCrst@4\n\t"
++		".def _TryEnterCrst@4; .scl 2; .type 32; .endef\n"
++		"_TryEnterCrst@4:\n\t"
++		"movl 4(%esp),%edx\n\t"
++		"xorl %eax,%eax\n\t"
++		"incl %eax\n\t"
++		"xorl %ecx,%ecx\n\t"
++		"cmpxchgl %ecx,0x10(%edx)\n\t" /* if (OP1==eax) { OP1=OP2; ZF=1; } else { eax=OP1; ZF=0 } */
++		"movl %fs:0x18, %ecx\n\t"
++		"addl _tesc_offset,%ecx\n\t"
++		"movl (%ecx),%ecx\n\t" /* ecx will contain TDBX now */
++		"cmpl $1,%eax\n\t"
++		"jnz .L1\n\t"
++		/* critical section was unowned => successful lock */
++		"movl %ecx,8(%edx)\n\t"
++		"incl 4(%edx)\n\t"
++		"ret $4\n\t"
++".L1: \n\t"
++		"cmpl %ecx,8(%edx)\n\t"
++		"jnz .L2\n\t"
++		/* critical section owned by this thread */
++		"decl 0x10(%edx)\n\t"
++		"incl 4(%edx)\n\t"
++		"xorl %eax,%eax\n\t"
++		"incl %eax\n\t"
++		"ret $4\n\t"
++".L2: \n\t"
++		/* critical section owned by other thread - do nothing */
++		"xorl %eax,%eax\n\t"
++		"ret $4\n\t"
++		);
++# else
++#  define CS_NATIVE_ONLY
++# endif
++#elif !(defined(_WIN64) || defined(_M_ARM))
++
++__declspec(naked) BOOL WINAPI TryEnterCrst(CRIT_SECT* crit)
++{
++__asm {
++	mov edx, [esp+4]
++	xor eax, eax
++	inc eax
++	xor ecx, ecx
++	cmpxchg [edx+10h], ecx ;if (OP1==eax) { OP1=OP2; ZF=1; } else { eax=OP1; ZF=0 }
++	;mov ecx, ppTDBXCur
++	mov ecx, fs:[18h]
++	add ecx, [tesc_offset]
++	mov ecx, [ecx] ;ecx will contain TDBX now
++	cmp eax, 1
++	jnz L1
++	;critical section was unowned => successful lock
++	mov [edx+8], ecx
++	inc dword ptr [edx+4]
++	ret 4
++L1:
++	cmp [edx+8], ecx
++	jnz L2
++	;critical section owned by this thread
++	dec dword ptr [edx+10h]
++	inc dword ptr [edx+4]
++	xor eax, eax
++	inc eax
++	ret 4
++L2:
++	;critical section owned by other thread - do nothing
++	xor eax, eax
++	ret 4
++	}
++}
++
++#endif
++
++typedef BOOL (WINAPI *tecs_f)(CRITICAL_SECTION* cs);
++
++static tecs_f tecs_p = NULL;
++
++BOOL WINAPI TryEnterCriticalSectionNative(CRITICAL_SECTION* cs)
++{
++#if !(defined(_WIN64) || defined(_M_ARM))
++	DWORD GV = GetVersion();
++	DWORD major = (DWORD)(LOBYTE(LOWORD(GV)));
++	DWORD minor = (DWORD)(HIBYTE(LOWORD(GV)));
++	DWORD isNT = (int) GV >= 0;
++	
++	if(!isNT || major < 4)
++	{
++#ifndef CS_NATIVE_ONLY
++		if(minor == 10 || minor == 90) /* 98 + Me*/
++		{
++			WIN_CRITICAL_SECTION* mycs = (WIN_CRITICAL_SECTION*) cs;
++			if (mycs->Type != K32OBJ_CRITICAL_SECTION)
++			{
++				//RaiseException(STATUS_ACCESS_VIOLATION, 0, 0, NULL);
++				// JH: maybe CS isn't iniciated yet...
++				InitializeCriticalSection(cs);
++			}
++			
++			if(init_tryentercritsec())
++			{
++				return TryEnterCrst(mycs->crit);
++			}
++		}
++		// else FIXME: 95, NT3, Win32s
++#endif
++		EnterCriticalSection(cs);
++		return TRUE;
++	}
++	else
++	{
++		if(tecs_p == NULL)
++		{
++			HMODULE hK = GetModuleHandleA("kernel32.dll");
++			if(hK)
++			{
++				tecs_p = (tecs_f)GetProcAddress(hK, "TryEnterCriticalSection"); // Note: 98 & ME exports this as a stub
++			}
++		}
++		
++		if(tecs_p != NULL)
++		{
++			return tecs_p(cs);
++		}
++	}
++	
++	RaiseException(STATUS_ACCESS_VIOLATION, 0, 0, NULL);
++	
++	return FALSE;
++#else
++	return TryEnterCriticalSection(cs);
++#endif
++}
++
++/* MAKE_EXPORT TryEnterCriticalSection_new=TryEnterCriticalSection */
++BOOL WINAPI TryEnterCriticalSection9x(CRITICAL_SECTION* cs)
++{
++	return TryEnterCriticalSectionNative(cs);
++}
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/version.rc mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/version.rc
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/version.rc	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/version.rc	2025-10-08 11:50:32.494789831 +0300
+@@ -23,15 +23,11 @@
+ #include <winver.h>
+ #include "wpth_ver.h"
+ 
+-#if defined(__MINGW64__)
+-# define WPTH_VERSIONINFO_COMMENT "GNU C build -- MinGW-w64 64-bit\0"
+-# define WPTH_VERSIONINFO_NAME "WinPthreadGC\0"
+-#elif defined(__MINGW32__)
+-# define WPTH_VERSIONINFO_COMMENT "GNU C build -- MinGW-w64 32-bit\0"
+-# define WPTH_VERSIONINFO_NAME "WinPthreadGC\0"
++#define WPTH_VERSIONINFO_NAME "WinPthreadGC\0"
++#ifdef _WIN64
++#define WPTH_VERSIONINFO_COMMENT "GNU C build -- MinGW-w64 64-bit\0"
+ #else
+-# define WPTH_VERSIONINFO_COMMENT "MSVC build\0"
+-# define WPTH_VERSIONINFO_NAME "WinPthreadMS\0"
++#define WPTH_VERSIONINFO_COMMENT "GNU C build -- MinGW-w64 32-bit\0"
+ #endif
+ 
+ VS_VERSION_INFO VERSIONINFO
+@@ -51,10 +47,10 @@ BEGIN
+             VALUE "FileVersion", WPTH_VERSION_STRING
+             VALUE "InternalName", WPTH_VERSIONINFO_NAME
+             VALUE "OriginalFilename", WPTH_VERSIONINFO_NAME
+-            VALUE "CompanyName", "MinGW-W64 Project. All rights reserved.\0"
+-            VALUE "LegalCopyright", "Copyright (C) MinGW-W64 Project Members 2010-2023\0"
+-            VALUE "Licence", "MIT AND BSD-3-Clause\0"
+-            VALUE "Info", "https://www.mingw-w64.org/\0"
++            VALUE "CompanyName", "MingW-W64 Project. All rights reserved.\0"
++            VALUE "LegalCopyright", "Copyright (C) MingW-W64 Project Members 2010-2011\0"
++            VALUE "Licence", "ZPL\0"
++            VALUE "Info", "http://mingw-w64.sourceforge.net/\0"
+ 	    VALUE "Comment", WPTH_VERSIONINFO_COMMENT
+         END
+     END
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/winpthread_internal.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/winpthread_internal.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/winpthread_internal.h	1970-01-01 03:00:00.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/winpthread_internal.h	2025-10-08 11:50:32.494789831 +0300
+@@ -0,0 +1,38 @@
++/*
++   Copyright (c) 2011 mingw-w64 project
++
++   Permission is hereby granted, free of charge, to any person obtaining a
++   copy of this software and associated documentation files (the "Software"),
++   to deal in the Software without restriction, including without limitation
++   the rights to use, copy, modify, merge, publish, distribute, sublicense,
++   and/or sell copies of the Software, and to permit persons to whom the
++   Software is furnished to do so, subject to the following conditions:
++
++   The above copyright notice and this permission notice shall be included in
++   all copies or substantial portions of the Software.
++
++   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
++   DEALINGS IN THE SOFTWARE.
++*/
++
++#ifndef WINPTHREAD_INTERNAL_H
++#define WINPTHREAD_INTERNAL_H
++struct _pthread_v * WINPTHREAD_API __pth_gpointer_locked (pthread_t id);
++int pthread_delay_np_ms (DWORD to);
++
++#define NO_VEH
++
++#define WIN9X
++
++#ifdef WIN9X
++#undef GetHandleInformation
++#define GetHandleInformation(h,f)  (1)
++
++#endif
++
++#endif /*WINPTHREAD_INTERNAL_H*/
+diff -rupN mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/wpth_ver.h mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/wpth_ver.h
+--- mingw-w64-v13.0.0.orig/mingw-w64-libraries/winpthreads/src/wpth_ver.h	2025-06-04 08:00:28.000000000 +0300
++++ mingw-w64-v13.0.0/mingw-w64-libraries/winpthreads/src/wpth_ver.h	2025-10-08 11:50:32.494789831 +0300
+@@ -1,5 +1,5 @@
+ /*
+-   Copyright (c) 2011-2016  mingw-w64 project
++   Copyright (c) 2011 mingw-w64 project
+ 
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
